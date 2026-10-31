@@ -53,6 +53,57 @@ public final class Paper26LiveProbe extends JavaPlugin {
         if (!ok) throw new AssertionError(message);
     }
 
+    /** Validate read-only elemental potion metadata without applying gameplay effects. */
+    private void verifyElementPotionViews() {
+        final MyItems plugin = (MyItems) Bukkit.getPluginManager().getPlugin("LyMeowzItem");
+        final com.lymeowz.item.manager.ElementRegistry registry =
+                com.lymeowz.item.manager.GameAccess.of(
+                        (com.lymeowz.item.LyMeowzItem) plugin).elements();
+        check(registry == plugin.getGameManager().getElementManager(),
+                "canonical element registry shares original live manager");
+        for (final String id : registry.ids()) {
+            final com.lymeowz.item.element.ElementDefinition definition = registry.find(id);
+            final api.praya.myitems.builder.element.Element legacy =
+                    plugin.getGameManager().getElementManager().getElementBuild(id);
+            check(definition == legacy && definition.potions() == legacy.getPotionBuild(),
+                    "canonical element potion definition is the original live builder");
+            check(definition.potions().attackerEffects().size()
+                            == legacy.getPotionBuild().getPotionAttacker().size()
+                            && definition.potions().victimEffects().size()
+                            == legacy.getPotionBuild().getPotionVictims().size(),
+                    "element potion effect IDs are preserved exactly");
+            try {
+                definition.potions().attackerEffects().clear();
+                throw new AssertionError("canonical element attacker effects are mutable");
+            } catch (UnsupportedOperationException expected) { }
+            try {
+                definition.potions().victimEffects().clear();
+                throw new AssertionError("canonical element victim effects are mutable");
+            } catch (UnsupportedOperationException expected) { }
+        }
+
+        final org.bukkit.potion.PotionEffectType speed =
+                com.praya.agarthalib.utility.PotionUtil.getPotionEffectType("speed");
+        check(speed != null, "existing potion speed alias resolves on Paper 26.3");
+        final java.util.HashMap<org.bukkit.potion.PotionEffectType,
+                api.praya.myitems.builder.potion.PotionProperties> source = new java.util.HashMap<>();
+        source.put(speed, new api.praya.myitems.builder.potion.PotionProperties(2, 0.5d, 1.5d));
+        final api.praya.myitems.builder.element.ElementPotion potion =
+                new api.praya.myitems.builder.element.ElementPotion(source, new java.util.HashMap<>());
+        final java.util.Map<org.bukkit.potion.PotionEffectType,
+                com.lymeowz.item.element.ElementEffect> snapshot = potion.attackerEffects();
+        final com.lymeowz.item.element.ElementEffect first = snapshot.get(speed);
+        check(first.grade() == 2 && first.chanceScale() == 0.5d
+                        && first.durationScale() == 1.5d,
+                "canonical effect snapshot retains original grade/chance/duration semantics");
+        source.put(speed, new api.praya.myitems.builder.potion.PotionProperties(4, 0.25d, 3.0d));
+        check(snapshot.get(speed).grade() == 2 && potion.attackerEffects().get(speed).grade() == 4,
+                "previous immutable snapshot does not track mutations in legacy potion builder");
+        check(potion.getPotionAttacker() == source,
+                "original legacy mutable potion map API remains unchanged");
+        getLogger().info("PASS: element registry and immutable potion metadata snapshots");
+    }
+
     /** Validate all 25 shipped class singletons against the running plugin,
      * configured damage scales, and exact existing lore encode/decode path.
      * Do not fire destructive combat in this startup smoke fixture.
@@ -966,6 +1017,7 @@ public final class Paper26LiveProbe extends JavaPlugin {
                     "marked combat stat survives legacy NBT item roundtrip");
             getLogger().info("PASS: live legacy NBT read-only fallback and PDC precedence");
             verifyWeaponAbilities();
+            verifyElementPotionViews();
             verifyMobSkillCasts();
             verifyEssentialsWarpProvider();
             verifyItemModels();
