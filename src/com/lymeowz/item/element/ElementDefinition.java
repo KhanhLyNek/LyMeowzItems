@@ -11,4 +11,5 @@ public interface ElementDefinition {
     double additionalDamageScale();
     double percentDamageScale();
     Map<String, Double> resistanceSnapshot();
+    ElementPotionDefinition potions();
 }
