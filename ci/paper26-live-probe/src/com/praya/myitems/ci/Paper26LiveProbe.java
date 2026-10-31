@@ -193,10 +193,10 @@ public final class Paper26LiveProbe extends JavaPlugin {
         final org.bukkit.configuration.file.YamlConfiguration sample =
                 org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(
                         new java.io.StringReader(
-                                "Test_Ability:\\n  max_grade: 0\\n  Base_Duration_Effect: -5\\n"
-                                + "  Scale_Duration_Effect: -9\\n"
-                                + "  Scale_Base_Percent_Damage: 12.5\\n"
-                                + "  Scale_Cast_Bonus_Damage: 3.0\\n"));
+                                "Test_Ability:\n  max_grade: 0\n  Base_Duration_Effect: -5\n"
+                                + "  Scale_Duration_Effect: -9\n"
+                                + "  Scale_Base_Percent_Damage: 12.5\n"
+                                + "  Scale_Cast_Bonus_Damage: 3.0\n"));
         final var parsed = com.lymeowz.item.config.AbilityWeaponDefinitions.parse(sample);
         final var parsedSkill = parsed.get("Test_Ability");
         check(parsedSkill != null && parsed.size() == 1,
