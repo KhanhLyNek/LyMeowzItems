@@ -107,4 +107,14 @@ public class GameManager implements com.lymeowz.item.manager.GameServices
         return java.util.Collections.unmodifiableCollection(
                 this.abilityWeaponManager.getAbilityWeaponPropertiesIDs());
     }
+
+    @Override
+    public final com.lymeowz.item.manager.ElementRegistry elements() {
+        return this.elementManager;
+    }
+
+    @Override
+    public final com.lymeowz.item.manager.ItemCatalog items() {
+        return this.itemManager;
+    }
 }

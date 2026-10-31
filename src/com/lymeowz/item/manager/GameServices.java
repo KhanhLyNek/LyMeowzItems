@@ -11,4 +11,6 @@ public interface GameServices {
     WeaponRegistry weaponRegistry();
     WeaponProperties weaponProperties(String id);
     Collection<String> weaponPropertyIds();
+    ElementRegistry elements();
+    ItemCatalog items();
 }

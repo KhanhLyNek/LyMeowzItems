@@ -79,6 +79,54 @@ public final class Paper26LiveProbe extends JavaPlugin {
                         (com.lymeowz.item.LyMeowzItem) myitems);
         check(services == myitems.getGameManager(),
                 "canonical manager facade is same original GameManager instance");
+        check(services.elements() == myitems.getGameManager().getElementManager(),
+                "new element registry shares original live manager");
+        check(services.items() == myitems.getGameManager().getItemManager(),
+                "new item catalog shares original live item manager");
+        check(services.elements().ids().containsAll(
+                        myitems.getGameManager().getElementManager().getElements()),
+                "new element manager retains existing configured IDs");
+        check(services.items().ids().containsAll(
+                        myitems.getGameManager().getItemManager().getItemIDs()),
+                "new item catalog retains all database keys");
+        check(services.elements().find("not-a-real-element") == null
+                        && services.items().find("not-a-real-item") == null,
+                "canonical element/item lookups preserve missing-ID behavior");
+        try {
+            services.elements().ids().clear();
+            throw new AssertionError("new element registry IDs are mutable");
+        } catch (UnsupportedOperationException expected) { }
+        try {
+            services.items().ids().clear();
+            throw new AssertionError("new item catalog IDs are mutable");
+        } catch (UnsupportedOperationException expected) { }
+        for (final String elementId : services.elements().ids()) {
+            final var oldElement = myitems.getGameManager().getElementManager()
+                    .getElementBuild(elementId);
+            final var newElement = services.elements().find(
+                    elementId.toUpperCase(java.util.Locale.ROOT));
+            check(newElement == oldElement,
+                    "element facade preserves original builder identity: " + elementId);
+            check(newElement.loreKey().equals(oldElement.getKeyLore()),
+                    "element lore identity stays unchanged");
+            check(newElement.additionalDamageScale()
+                            == oldElement.getBoostBuild().getScaleBaseAdditionalDamage()
+                            && newElement.percentDamageScale()
+                            == oldElement.getBoostBuild().getScaleBasePercentDamage(),
+                    "element scaling remains unchanged");
+            check(newElement.resistanceSnapshot().equals(oldElement.getResistance()),
+                    "element resistances preserved in canonical view");
+            try {
+                newElement.resistanceSnapshot().clear();
+                throw new AssertionError("element facade resistance map is mutable");
+            } catch (UnsupportedOperationException expected) { }
+        }
+        for (final String itemId : services.items().ids()) {
+            final ItemStack fromOld = myitems.getGameManager().getItemManager().getItem(itemId);
+            final ItemStack fromNew = services.items().find(itemId);
+            check(fromNew != fromOld && fromNew.equals(fromOld),
+                    "canonical item catalog returns the same cloned item bytes/identity");
+        }
         check(services.weaponRegistry() == registered,
                 "canonical GameServices uses exact original skill registry");
         check(services.weaponPropertyIds().size() >= 25,
@@ -208,6 +256,33 @@ public final class Paper26LiveProbe extends JavaPlugin {
         check(parsedSkill.getScaleBasePercentDamage() == 12.5
                         && parsedSkill.getScaleCastBonusDamage() == 3.0,
                 "new YAML reader preserves numerical YAML field conversion");
+        final org.bukkit.configuration.file.YamlConfiguration elementSample =
+                org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(
+                        new java.io.StringReader(
+                                "Custom_Fire:\n"
+                                + "  Keylore: '&cCustom Fire'\n"
+                                + "  Scale_Base_Additional_Damage: 1.5\n"
+                                + "  Scale_Bonus_Percent_Damage: -2.25\n"
+                                + "  Resistance:\n    Water: 3.75\n"
+                                + "  Potion_To_Attackers:\n    SPEED:\n"
+                                + "      Grade: 99\n"
+                                + "      Scale_Chance: -2\n"
+                                + "      Scale_Duration: 900\n"));
+        final var parsedElements =
+                com.lymeowz.item.config.ElementDefinitions.parse(elementSample);
+        final var customFire = parsedElements.get("Custom_Fire");
+        check(customFire != null && parsedElements.size() == 1,
+                "canonical YAML element parser preserves IDs and aliases");
+        check(customFire.getBoostBuild().getScaleBaseAdditionalDamage() == 1.5
+                        && customFire.getBoostBuild().getScaleBasePercentDamage() == -2.25
+                        && customFire.getResistance().get("Water") == 3.75,
+                "canonical YAML parser preserves element scaling and resistance");
+        final var speed = customFire.getPotionBuild().getPotionAttacker()
+                .get(org.bukkit.potion.PotionEffectType.SPEED);
+        check(speed != null && speed.getGrade() == 10
+                        && speed.getScaleChance() == 0.01
+                        && speed.getScaleDuration() == 100.0,
+                "canonical YAML reader preserves potion grade/chance/duration clamps");
         final api.praya.myitems.builder.ability.AbilityWeaponProperties settings =
                 new api.praya.myitems.builder.ability.AbilityWeaponProperties(
                         3, 40, 10, 2.5, 12.5, 4.0, 20.0);

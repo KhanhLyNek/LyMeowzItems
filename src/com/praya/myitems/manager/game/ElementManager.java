@@ -28,7 +28,7 @@ import com.praya.myitems.MyItems;
 import com.praya.myitems.config.game.ElementConfig;
 import com.praya.myitems.builder.handler.HandlerManager;
 
-public class ElementManager extends HandlerManager
+public class ElementManager extends HandlerManager implements com.lymeowz.item.manager.ElementRegistry
 {
     private final ElementConfig elementConfig;
     
@@ -51,6 +51,18 @@ public class ElementManager extends HandlerManager
     
     public final Element getElementBuild(final String element) {
         return this.getElementConfig().getElementBuild(element);
+    }
+
+    @Override
+    public final java.util.Collection<String> ids() {
+        return java.util.Collections.unmodifiableList(
+                new java.util.ArrayList<>(getElements()));
+    }
+
+    @Override
+    public final com.lymeowz.item.element.ElementDefinition find(final String id) {
+        // The original ElementConfig lookup remains the single source of truth.
+        return id == null ? null : getElementBuild(id);
     }
     
     public final String getTextElement(final String element, final double value) {

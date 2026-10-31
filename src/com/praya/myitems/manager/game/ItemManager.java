@@ -12,7 +12,7 @@ import com.praya.myitems.MyItems;
 import com.praya.myitems.config.game.ItemConfig;
 import com.praya.myitems.builder.handler.HandlerManager;
 
-public class ItemManager extends HandlerManager
+public class ItemManager extends HandlerManager implements com.lymeowz.item.manager.ItemCatalog
 {
     private final ItemConfig itemConfig;
     
@@ -31,6 +31,16 @@ public class ItemManager extends HandlerManager
     
     public final ItemStack getItem(final String nameid) {
         return this.getItemConfig().getItem(nameid);
+    }
+
+    @Override
+    public final java.util.Collection<String> ids() {
+        return java.util.Collections.unmodifiableList(new java.util.ArrayList<>(getItemIDs()));
+    }
+
+    @Override
+    public final ItemStack find(final String id) {
+        return id == null ? null : getItem(id);
     }
     
     public final Collection<ItemStack> getItems() {

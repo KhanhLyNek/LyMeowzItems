@@ -6,7 +6,7 @@ package api.praya.myitems.builder.element;
 
 import java.util.HashMap;
 
-public class Element
+public class Element implements com.lymeowz.item.element.ElementDefinition
 {
     private final String keyLore;
     private final ElementBoost boostBuild;
@@ -34,5 +34,25 @@ public class Element
     
     public final HashMap<String, Double> getResistance() {
         return this.resistance;
+    }
+
+    @Override
+    public final String loreKey() {
+        return getKeyLore();
+    }
+
+    @Override
+    public final double additionalDamageScale() {
+        return getBoostBuild().getScaleBaseAdditionalDamage();
+    }
+
+    @Override
+    public final double percentDamageScale() {
+        return getBoostBuild().getScaleBasePercentDamage();
+    }
+
+    @Override
+    public final java.util.Map<String, Double> resistanceSnapshot() {
+        return java.util.Collections.unmodifiableMap(new HashMap<>(getResistance()));
     }
 }
