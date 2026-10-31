@@ -74,6 +74,14 @@ public final class Paper26LiveProbe extends JavaPlugin {
                 "Weak", "Wither"
         };
         final Set<String> ids = new HashSet<>();
+        check(registered instanceof com.lymeowz.item.manager.WeaponRegistry,
+                "legacy skill manager exposes the new LyMeowz registry API");
+        final com.lymeowz.item.manager.WeaponRegistry modernRegistry = registered;
+        check(modernRegistry.weapons().size() == names.length,
+                "new weapon registry reuses all 25 old singletons");
+        check(modernRegistry.weapon("missing-skill") == null
+                        && modernRegistry.weapon(null) == null,
+                "new weapon registry handles missing and null IDs unchanged");
         check(registered.getAllAbilityWeapon().size() == names.length,
                 "exactly 25 skills registered, not " + registered.getAllAbilityWeapon().size());
         for (String name : names) {
@@ -86,23 +94,33 @@ public final class Paper26LiveProbe extends JavaPlugin {
             final String id = ability.getID();
             check(id != null && !id.isBlank() && ids.add(id),
                     name + " has a unique nonempty ID");
+            check(ability instanceof com.lymeowz.item.ability.WeaponAbility,
+                    name + " implements new weapon ability API");
             check(registered.getAbilityWeapon(id) == ability,
                     name + " is registered by its original ID");
+            check(modernRegistry.weapon(id.toUpperCase(java.util.Locale.ROOT)) == ability,
+                    name + " case-insensitive new manager lookup keeps singleton identity");
             check(ability.getKeyLore() != null && !ability.getKeyLore().isBlank(),
                     name + " has configured lore alias");
             final int maxGrade = ability.getMaxGrade();
             check(maxGrade > 0, name + " has valid max grade");
             if (ability instanceof AbilityWeaponAttributeBaseDamage base) {
+                check(base instanceof com.lymeowz.item.ability.WeaponBaseDamage,
+                        name + " legacy base damage API also implements LyMeowz API");
                 check(Double.isFinite(base.getBaseBonusDamage(1))
                                 && Double.isFinite(base.getBasePercentDamage(1)),
                         name + " base damage scales are finite");
             }
             if (ability instanceof AbilityWeaponAttributeCastDamage cast) {
+                check(cast instanceof com.lymeowz.item.ability.WeaponCastDamage,
+                        name + " legacy cast damage API also implements LyMeowz API");
                 check(Double.isFinite(cast.getCastBonusDamage(1))
                                 && Double.isFinite(cast.getCastPercentDamage(1)),
                         name + " cast damage scales are finite");
             }
             if (ability instanceof AbilityWeaponAttributeEffect effect) {
+                check(effect instanceof com.lymeowz.item.ability.WeaponEffectDuration,
+                        name + " legacy effect API also implements LyMeowz API");
                 check(effect.getEffectDuration(1) >= 0,
                         name + " effect duration must not be negative");
             }
@@ -116,7 +134,24 @@ public final class Paper26LiveProbe extends JavaPlugin {
                             && Math.abs(decoded.getChance() - 65.0) < 0.001,
                     name + " can decode its own lore without losing grade/chance");
         }
+        final api.praya.myitems.builder.ability.AbilityWeaponProperties settings =
+                new api.praya.myitems.builder.ability.AbilityWeaponProperties(
+                        3, 40, 10, 2.5, 12.5, 4.0, 20.0);
+        check(settings instanceof com.lymeowz.item.ability.WeaponProperties,
+                "existing weapon property instances implement canonical builder API");
+        check(settings.getTotalDuration(2) == 60
+                        && settings.getTotalDuration(99) == 70
+                        && settings.getTotalDuration(-3) == 40,
+                "canonical ability duration scaling retains grade clamping");
+        check(settings.getTotalBaseDamage(2, 20.0) == 10.0
+                        && settings.getTotalCastDamage(2, 20.0) == 16.0,
+                "canonical ability damage scaling matches original formula");
+        check(settings.getTotalBaseDamage(99, 20.0)
+                        == com.lymeowz.item.ability.AbilityScaling.baseDamage(
+                                99, 3, 2.5, 12.5, 20.0),
+                "old builder calculations delegate to new scaling math");
         getLogger().info("PASS: 25/25 weapon ability classes registered, configured and lore-roundtripped");
+        getLogger().info("PASS: new LyMeowz ability builder, registry and damage scaling APIs");
     }
 
     /** Execute real cast() implementations on disposable mobs on Paper's

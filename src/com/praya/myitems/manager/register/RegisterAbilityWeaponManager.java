@@ -39,7 +39,7 @@ import api.praya.myitems.builder.ability.AbilityWeapon;
 import java.util.HashMap;
 import com.praya.myitems.builder.handler.HandlerManager;
 
-public class RegisterAbilityWeaponManager extends HandlerManager
+public class RegisterAbilityWeaponManager extends HandlerManager implements com.lymeowz.item.manager.WeaponRegistry
 {
     private final HashMap<String, AbilityWeapon> mapAbilityWeapon;
     
@@ -58,16 +58,19 @@ public class RegisterAbilityWeaponManager extends HandlerManager
     }
     
     public final AbilityWeapon getAbilityWeapon(final String ability) {
-        if (ability != null) {
-            for (final String key : this.getAbilityIDs()) {
-                if (key.equalsIgnoreCase(ability)) {
-                    return this.mapAbilityWeapon.get(key);
-                }
-            }
-        }
-        return null;
+        return com.lymeowz.item.manager.WeaponLookup.find(this.mapAbilityWeapon, ability);
     }
-    
+
+    @Override
+    public final com.lymeowz.item.ability.WeaponAbility weapon(final String id) {
+        return getAbilityWeapon(id);
+    }
+
+    @Override
+    public final Collection<? extends com.lymeowz.item.ability.WeaponAbility> weapons() {
+        return getAllAbilityWeapon();
+    }
+
     public final boolean isExists(final String ability) {
         return this.getAbilityWeapon(ability) != null;
     }

@@ -4,7 +4,7 @@
 
 package api.praya.myitems.builder.ability;
 
-public interface AbilityWeaponAttributeEffect
+public interface AbilityWeaponAttributeEffect extends com.lymeowz.item.ability.WeaponEffectDuration
 {
     int getEffectDuration(final int p0);
 }

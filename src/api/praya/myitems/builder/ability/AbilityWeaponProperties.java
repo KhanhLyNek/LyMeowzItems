@@ -6,7 +6,7 @@ package api.praya.myitems.builder.ability;
 
 import com.praya.agarthalib.utility.MathUtil;
 
-public class AbilityWeaponProperties
+public class AbilityWeaponProperties implements com.lymeowz.item.ability.WeaponProperties
 {
     private final int maxGrade;
     private final int baseDurationEffect;
@@ -55,26 +55,18 @@ public class AbilityWeaponProperties
     }
     
     public final int getTotalDuration(final int grade) {
-        final int finalGrade = MathUtil.limitInteger(grade, 0, this.getMaxGrade());
-        final int baseDuration = this.getBaseDurationEffect();
-        final int scaleDuration = this.getScaleDurationEffect();
-        final int totalDuration = baseDuration + finalGrade * scaleDuration;
-        return totalDuration;
+        return com.lymeowz.item.ability.AbilityScaling.duration(grade, getMaxGrade(),
+                getBaseDurationEffect(), getScaleDurationEffect());
     }
-    
+
     public final double getTotalBaseDamage(final int grade, final double damage) {
-        final int finalGrade = MathUtil.limitInteger(grade, 0, this.getMaxGrade());
-        final double scaleBonusDamage = this.getScaleBaseBonusDamage();
-        final double scalePercentDamage = this.getScaleBasePercentDamage();
-        final double totalDamage = finalGrade * scaleBonusDamage + damage * (finalGrade * scalePercentDamage / 100.0);
-        return totalDamage;
+        return com.lymeowz.item.ability.AbilityScaling.baseDamage(grade, getMaxGrade(),
+                getScaleBaseBonusDamage(), getScaleBasePercentDamage(), damage);
     }
-    
+
     public final double getTotalCastDamage(final int grade, final double damage) {
-        final int finalGrade = MathUtil.limitInteger(grade, 0, this.getMaxGrade());
-        final double scaleBonusDamage = this.getScaleCastBonusDamage();
-        final double scalePercentDamage = this.getScaleCastPercentDamage();
-        final double totalDamage = finalGrade * scaleBonusDamage + damage * (finalGrade * scalePercentDamage / 100.0);
-        return totalDamage;
+        return com.lymeowz.item.ability.AbilityScaling.castDamage(grade, getMaxGrade(),
+                getScaleCastBonusDamage(), getScaleCastPercentDamage(), damage);
     }
+
 }

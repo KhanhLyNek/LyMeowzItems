@@ -4,7 +4,7 @@
 
 package api.praya.myitems.builder.ability;
 
-public interface AbilityWeaponAttributeCastDamage
+public interface AbilityWeaponAttributeCastDamage extends com.lymeowz.item.ability.WeaponCastDamage
 {
     double getCastBonusDamage(final int p0);
     

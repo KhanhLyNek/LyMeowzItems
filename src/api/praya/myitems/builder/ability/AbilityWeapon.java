@@ -10,7 +10,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import com.praya.myitems.MyItems;
 import org.bukkit.plugin.Plugin;
 
-public abstract class AbilityWeapon extends Ability
+public abstract class AbilityWeapon extends Ability implements com.lymeowz.item.ability.WeaponAbility
 {
     public AbilityWeapon(final Plugin plugin, final String id) {
         super(plugin, id);
