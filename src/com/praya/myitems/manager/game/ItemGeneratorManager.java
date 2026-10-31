@@ -10,7 +10,7 @@ import com.praya.myitems.MyItems;
 import com.praya.myitems.config.game.ItemGeneratorConfig;
 import com.praya.myitems.builder.handler.HandlerManager;
 
-public class ItemGeneratorManager extends HandlerManager
+public class ItemGeneratorManager extends HandlerManager implements com.lymeowz.item.manager.ItemGeneratorRegistry
 {
     private final ItemGeneratorConfig itemGeneratorConfig;
     
@@ -35,6 +35,16 @@ public class ItemGeneratorManager extends HandlerManager
         return this.getItemGeneratorConfig().getItemGenerator(nameid);
     }
     
+    @Override
+    public final java.util.Collection<String> ids() {
+        return java.util.Collections.unmodifiableList(new java.util.ArrayList<>(getItemGeneratorIDs()));
+    }
+
+    @Override
+    public final com.lymeowz.item.item.ItemGeneratorDefinition find(final String id) {
+        return id == null ? null : getItemGenerator(id);
+    }
+
     public final boolean isItemGeneratorExists(final String nameid) {
         return this.getItemGenerator(nameid) != null;
     }
