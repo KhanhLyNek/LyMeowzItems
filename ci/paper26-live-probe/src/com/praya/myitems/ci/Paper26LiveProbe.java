@@ -74,6 +74,23 @@ public final class Paper26LiveProbe extends JavaPlugin {
                 "Weak", "Wither"
         };
         final Set<String> ids = new HashSet<>();
+        final com.lymeowz.item.manager.GameServices services =
+                com.lymeowz.item.manager.GameAccess.of(
+                        (com.lymeowz.item.LyMeowzItem) myitems);
+        check(services == myitems.getGameManager(),
+                "canonical manager facade is same original GameManager instance");
+        check(services.weaponRegistry() == registered,
+                "canonical GameServices uses exact original skill registry");
+        check(services.weaponPropertyIds().size() >= 25,
+                "canonical GameServices exposes configured skill properties");
+        check(com.lymeowz.item.manager.GameAccess.of(null) == null,
+                "canonical game accessor handles absent plugin");
+        try {
+            services.weaponPropertyIds().clear();
+            throw new AssertionError("canonical skill property IDs allow mutation");
+        } catch (UnsupportedOperationException expected) {
+            // The old manager's mutable collection API remains bytecode compatible.
+        }
         check(registered instanceof com.lymeowz.item.manager.WeaponRegistry,
                 "legacy skill manager exposes the new LyMeowz registry API");
         final com.lymeowz.item.manager.WeaponRegistry modernRegistry = registered;
@@ -123,6 +140,8 @@ public final class Paper26LiveProbe extends JavaPlugin {
             check(maxGrade > 0, name + " has valid max grade");
             final api.praya.myitems.builder.ability.AbilityWeaponProperties config =
                     abilityManager.getAbilityWeaponProperties(id);
+            check(services.weaponProperties(id) == config,
+                    name + " new game manager exposes same original property builder");
             check(config instanceof com.lymeowz.item.ability.WeaponProperties,
                     name + " original property object implements canonical builder API");
             for (int candidate : new int[] {-2, 0, 1, maxGrade,
@@ -171,6 +190,24 @@ public final class Paper26LiveProbe extends JavaPlugin {
                             && Math.abs(decoded.getChance() - 65.0) < 0.001,
                     name + " can decode its own lore without losing grade/chance");
         }
+        final org.bukkit.configuration.file.YamlConfiguration sample =
+                org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(
+                        new java.io.StringReader(
+                                "Test_Ability:\\n  max_grade: 0\\n  Base_Duration_Effect: -5\\n"
+                                + "  Scale_Duration_Effect: -9\\n"
+                                + "  Scale_Base_Percent_Damage: 12.5\\n"
+                                + "  Scale_Cast_Bonus_Damage: 3.0\\n"));
+        final var parsed = com.lymeowz.item.config.AbilityWeaponDefinitions.parse(sample);
+        final var parsedSkill = parsed.get("Test_Ability");
+        check(parsedSkill != null && parsed.size() == 1,
+                "new YAML reader preserves skill IDs and key spelling");
+        check(parsedSkill.getMaxGrade() == 1
+                        && parsedSkill.getBaseDurationEffect() == 0
+                        && parsedSkill.getScaleDurationEffect() == 0,
+                "new YAML reader preserves legacy grade and duration clamps");
+        check(parsedSkill.getScaleBasePercentDamage() == 12.5
+                        && parsedSkill.getScaleCastBonusDamage() == 3.0,
+                "new YAML reader preserves numerical YAML field conversion");
         final api.praya.myitems.builder.ability.AbilityWeaponProperties settings =
                 new api.praya.myitems.builder.ability.AbilityWeaponProperties(
                         3, 40, 10, 2.5, 12.5, 4.0, 20.0);

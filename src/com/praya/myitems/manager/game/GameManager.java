@@ -6,8 +6,9 @@ package com.praya.myitems.manager.game;
 
 import com.praya.myitems.MyItems;
 
-public class GameManager
+public class GameManager implements com.lymeowz.item.manager.GameServices
 {
+    private final MyItems owner;
     private final AbilityWeaponManager abilityWeaponManager;
     private final ElementManager elementManager;
     private final ItemManager itemManager;
@@ -23,6 +24,7 @@ public class GameManager
     private final MenuManager menuManager;
     
     public GameManager(final MyItems plugin) {
+        this.owner = plugin;
         this.abilityWeaponManager = new AbilityWeaponManager(plugin);
         this.elementManager = new ElementManager(plugin);
         this.itemManager = new ItemManager(plugin);
@@ -88,5 +90,21 @@ public class GameManager
     
     public final MenuManager getMenuManager() {
         return this.menuManager;
+    }
+
+    @Override
+    public final com.lymeowz.item.manager.WeaponRegistry weaponRegistry() {
+        return this.owner.getRegisterManager().getRegisterAbilityWeaponManager();
+    }
+
+    @Override
+    public final com.lymeowz.item.ability.WeaponProperties weaponProperties(final String id) {
+        return this.abilityWeaponManager.getAbilityWeaponProperties(id);
+    }
+
+    @Override
+    public final java.util.Collection<String> weaponPropertyIds() {
+        return java.util.Collections.unmodifiableCollection(
+                this.abilityWeaponManager.getAbilityWeaponPropertiesIDs());
     }
 }

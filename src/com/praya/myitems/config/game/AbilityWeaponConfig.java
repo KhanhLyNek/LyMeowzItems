@@ -57,65 +57,10 @@ public class AbilityWeaponConfig extends HandlerConfig
     }
     
     private final void loadConfig() {
-        final PluginManager pluginManager = this.plugin.getPluginManager();
-        final DataManager dataManager = pluginManager.getDataManager();
-        final String path = dataManager.getPath("Path_File_Ability_Weapon");
-        final File file = FileUtil.getFile((JavaPlugin)this.plugin, path);
-        if (!file.exists()) {
-            FileUtil.saveResource((JavaPlugin)this.plugin, path);
-        }
-        for (int t = 0; t < 2; ++t) {
-            FileConfiguration config;
-            if (t == 0) {
-                config = FileUtil.getFileConfigurationResource((JavaPlugin)this.plugin, path);
-            }
-            else {
-                config = FileUtil.getFileConfiguration(file);
-            }
-            for (final String key : config.getKeys(false)) {
-                final ConfigurationSection mainDataSection = config.getConfigurationSection(key);
-                int maxGrade = 1;
-                int baseDurationEffect = 1;
-                int scaleDurationEffect = 1;
-                double scaleBaseBonusDamage = 0.0;
-                double scaleBasePercentDamage = 0.0;
-                double scaleCastBonusDamage = 0.0;
-                double scaleCastPercentDamage = 0.0;
-                for (final String keySection : mainDataSection.getKeys(false)) {
-                    if (keySection.equalsIgnoreCase("Max_Grade")) {
-                        maxGrade = mainDataSection.getInt(keySection);
-                    }
-                    else if (keySection.equalsIgnoreCase("Base_Duration_Effect")) {
-                        baseDurationEffect = mainDataSection.getInt(keySection);
-                    }
-                    else if (keySection.equalsIgnoreCase("Scale_Duration_Effect")) {
-                        scaleDurationEffect = mainDataSection.getInt(keySection);
-                    }
-                    else if (keySection.equalsIgnoreCase("Scale_Base_Bonus_Damage")) {
-                        scaleBaseBonusDamage = mainDataSection.getDouble(keySection);
-                    }
-                    else if (keySection.equalsIgnoreCase("Scale_Base_Percent_Damage")) {
-                        scaleBasePercentDamage = mainDataSection.getDouble(keySection);
-                    }
-                    else if (keySection.equalsIgnoreCase("Scale_Cast_Bonus_Damage")) {
-                        scaleCastBonusDamage = mainDataSection.getDouble(keySection);
-                    }
-                    else {
-                        if (!keySection.equalsIgnoreCase("Scale_Cast_Percent_Damage")) {
-                            continue;
-                        }
-                        scaleCastPercentDamage = mainDataSection.getDouble(keySection);
-                    }
-                }
-                maxGrade = Math.max(1, maxGrade);
-                baseDurationEffect = Math.max(0, baseDurationEffect);
-                scaleDurationEffect = Math.max(0, scaleDurationEffect);
-                final AbilityWeaponProperties abilityWeaponProperties = new AbilityWeaponProperties(maxGrade, baseDurationEffect, scaleDurationEffect, scaleBaseBonusDamage, scaleBasePercentDamage, scaleCastBonusDamage, scaleCastPercentDamage);
-                this.mapAbilityWeaponProperties.put(key, abilityWeaponProperties);
-            }
-        }
+        this.mapAbilityWeaponProperties.putAll(
+                com.lymeowz.item.config.AbilityWeaponDefinitions.load(this.plugin));
     }
-    
+
     private final void moveOldFile() {
         final PluginManager pluginManager = this.plugin.getPluginManager();
         final DataManager dataManager = pluginManager.getDataManager();
