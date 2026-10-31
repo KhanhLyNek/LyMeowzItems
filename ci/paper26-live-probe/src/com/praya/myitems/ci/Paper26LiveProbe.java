@@ -104,6 +104,26 @@ public final class Paper26LiveProbe extends JavaPlugin {
                     name + " has configured lore alias");
             final int maxGrade = ability.getMaxGrade();
             check(maxGrade > 0, name + " has valid max grade");
+            final api.praya.myitems.builder.ability.AbilityWeaponProperties config =
+                    abilityManager.getAbilityWeaponProperties(id);
+            check(config instanceof com.lymeowz.item.ability.WeaponProperties,
+                    name + " original property object implements canonical builder API");
+            for (int candidate : new int[] {-2, 0, 1, maxGrade,
+                    maxGrade == Integer.MAX_VALUE ? maxGrade : maxGrade + 1}) {
+                final int grade = Math.min(maxGrade, Math.max(0, candidate));
+                final int expectedDuration = config.getBaseDurationEffect()
+                        + grade * config.getScaleDurationEffect();
+                final double expectedBase = grade * config.getScaleBaseBonusDamage()
+                        + 24.0 * (grade * config.getScaleBasePercentDamage() / 100.0);
+                final double expectedCast = grade * config.getScaleCastBonusDamage()
+                        + 24.0 * (grade * config.getScaleCastPercentDamage() / 100.0);
+                check(config.getTotalDuration(candidate) == expectedDuration,
+                        name + " duration/grade unchanged for " + candidate);
+                check(Double.compare(config.getTotalBaseDamage(candidate, 24.0), expectedBase) == 0,
+                        name + " base damage/grade unchanged for " + candidate);
+                check(Double.compare(config.getTotalCastDamage(candidate, 24.0), expectedCast) == 0,
+                        name + " cast damage/grade unchanged for " + candidate);
+            }
             if (ability instanceof AbilityWeaponAttributeBaseDamage base) {
                 check(base instanceof com.lymeowz.item.ability.WeaponBaseDamage,
                         name + " legacy base damage API also implements LyMeowz API");
@@ -628,6 +648,19 @@ public final class Paper26LiveProbe extends JavaPlugin {
         check(paths.getDataConfig().getData("Path_File_Command") != null,
                 "old DataConfig API still exposes path dictionary builds");
         final AgarthaLib lymeowzLib = (AgarthaLib) Bukkit.getPluginManager().getPlugin("LyMeowzLib");
+        check(lymeowzLib.getPluginManager().getCommandManager()
+                        instanceof com.lymeowz.lib.command.CommandRegistry,
+                "legacy library manager implements new CommandRegistry API");
+        final com.lymeowz.lib.command.CommandRegistry newCommands =
+                lymeowzLib.getPluginManager().getCommandManager();
+        check(newCommands.checkCommand("rElOaD", "AgarthaLib_Reload")
+                        && newCommands.checkCommand("SETUP", "AgarthaLib_Reload")
+                        && !newCommands.checkCommand("unknown", "AgarthaLib_Reload"),
+                "LyMeowzLib command registry preserves main and alias case matching");
+        check("lymeowzlib.command.reload".equals(newCommands.getPermission("AgarthaLib_Reload")),
+                "LyMeowzLib command registry returns new canonical permission");
+        check(!com.lymeowz.lib.command.CommandLookup.matches(null, "reload"),
+                "LyMeowzLib command matcher preserves absent-command behavior");
         check(lymeowzItem.getPluginManager().getLanguageManager()
                         .getListText("en", "Argument_MyItems_Help").stream()
                         .anyMatch(line -> line.contains("/lymeowzitem help")),
