@@ -53,6 +53,102 @@ public final class Paper26LiveProbe extends JavaPlugin {
         if (!ok) throw new AssertionError(message);
     }
 
+    /** Validate migrated generator YAML and the original live gameplay builder. */
+    private void verifyItemGenerators() {
+        final MyItems plugin = (MyItems) Bukkit.getPluginManager().getPlugin("LyMeowzItem");
+        final com.praya.myitems.manager.game.GameManager game = plugin.getGameManager();
+        final com.praya.myitems.manager.game.ItemGeneratorManager legacy =
+                game.getItemGeneratorManager();
+        final com.lymeowz.item.manager.GameServices services =
+                com.lymeowz.item.manager.GameAccess.of(
+                        (com.lymeowz.item.LyMeowzItem) plugin);
+        check(services.itemGenerators() == legacy,
+                "canonical item generator registry shares the original manager instance");
+        check(services.itemGenerators().ids().containsAll(legacy.getItemGeneratorIDs()),
+                "generator IDs remain unchanged");
+        check(services.itemGenerators().find("missing-generator-id") == null,
+                "canonical generator registry preserves missing IDs");
+        try {
+            services.itemGenerators().ids().clear();
+            throw new AssertionError("canonical generator IDs must be immutable");
+        } catch (UnsupportedOperationException expected) { }
+
+        for (final String id : legacy.getItemGeneratorIDs()) {
+            final api.praya.myitems.builder.item.ItemGenerator original =
+                    legacy.getItemGenerator(id);
+            final com.lymeowz.item.item.ItemGeneratorDefinition view =
+                    services.itemGenerators().find(id.toUpperCase(java.util.Locale.ROOT));
+            check(view == original, "canonical lookup returns the original live generator");
+            check(view.id().equals(id) && view.displayName().equals(original.getDisplayName()),
+                    "generator ID and display name preserved");
+            check(view.typeWeights().equals(original.getMapPossibilityType())
+                            && view.tierWeights().equals(original.getMapPossibilityTier()),
+                    "generator type/tier probability weights preserved");
+            try {
+                view.typeWeights().clear();
+                throw new AssertionError("generator type weights must be read-only");
+            } catch (UnsupportedOperationException expected) { }
+            try {
+                view.loreLines().clear();
+                throw new AssertionError("generator lore must be read-only");
+            } catch (UnsupportedOperationException expected) { }
+        }
+
+        final java.util.Collection<String> types = game.getItemTypeManager().getItemTypeIDs();
+        final java.util.Collection<String> tiers = game.getItemTierManager().getItemTierIDs();
+        check(!types.isEmpty() && !tiers.isEmpty(), "original type/tier configs loaded");
+        final String typeId = types.iterator().next();
+        final String tierId = tiers.iterator().next();
+        final org.bukkit.configuration.file.YamlConfiguration yaml =
+                new org.bukkit.configuration.file.YamlConfiguration();
+        yaml.set("MiXeD_Generator.Display_Name", "&aLegacy Name");
+        yaml.set("MiXeD_Generator.Unbreakable", true);
+        yaml.set("MiXeD_Generator.ItemFlags", List.of("HIDE_ATTRIBUTES"));
+        yaml.set("MiXeD_Generator.Lores", List.of("&7Kept Lore"));
+        yaml.set("MiXeD_Generator.Type." + typeId + ".Possibility", 7);
+        yaml.set("MiXeD_Generator.Type." + typeId + ".Names", List.of("Legacy Name"));
+        yaml.set("MiXeD_Generator.Tier." + tierId + ".Possibility", 13);
+        yaml.set("MiXeD_Generator.Tier." + tierId + ".Additional_Lores", List.of("&7extra"));
+        final java.util.Map<String, api.praya.myitems.builder.item.ItemGenerator> decoded =
+                com.lymeowz.item.config.ItemGeneratorDefinitions.read(
+                        yaml, game.getItemTypeManager(), game.getItemTierManager());
+        check(decoded.size() == 1 && decoded.containsKey("MiXeD_Generator"),
+                "generator YAML reader retains exact mixed-case IDs");
+        final api.praya.myitems.builder.item.ItemGenerator generator =
+                decoded.get("MiXeD_Generator");
+        check(generator.isUnbreakable()
+                        && generator.getFlags().equals(List.of("HIDE_ATTRIBUTES"))
+                        && generator.getLores().equals(List.of("&7Kept Lore")),
+                "generator YAML reader retains Unbreakable, ItemFlags alias and lore");
+        check(generator.getMapPossibilityType().get(typeId) == 7
+                        && generator.getMapPossibilityTier().get(tierId) == 13,
+                "generator YAML reader retains configured weights");
+        check(generator.getMapType().values().iterator().next().getNames()
+                        .equals(List.of("Legacy Name")),
+                "legacy Names alias retained");
+        check(generator.getMapTier().values().iterator().next().getAdditionalLores()
+                        .equals(List.of("&7extra")),
+                "legacy Additional_Lores retained");
+
+        final java.util.HashMap<api.praya.myitems.builder.item.ItemType,
+                api.praya.myitems.builder.item.ItemGeneratorType> validTypes = new java.util.HashMap<>();
+        validTypes.put(game.getItemTypeManager().getItemType(typeId),
+                new api.praya.myitems.builder.item.ItemGeneratorType(
+                        1, List.of(), List.of("test")));
+        final java.util.HashMap<api.praya.myitems.builder.item.ItemTier,
+                api.praya.myitems.builder.item.ItemGeneratorTier> missingTiers = new java.util.HashMap<>();
+        missingTiers.put(new api.praya.myitems.builder.item.ItemTier(
+                        "missing-tier-for-probe", "", "", null),
+                new api.praya.myitems.builder.item.ItemGeneratorTier(1, List.of()));
+        final api.praya.myitems.builder.item.ItemGenerator missingTierGenerator =
+                new api.praya.myitems.builder.item.ItemGenerator(
+                        "invalid-tier", "test", false, List.of(), List.of(),
+                        validTypes, missingTiers);
+        check(missingTierGenerator.generateItem() == null,
+                "generator safely skips removed/missing tiers without throwing");
+        getLogger().info("PASS: legacy item generator YAML, live registry and missing-tier guard");
+    }
+
     /** Validate all 25 shipped class singletons against the running plugin,
      * configured damage scales, and exact existing lore encode/decode path.
      * Do not fire destructive combat in this startup smoke fixture.
@@ -966,6 +1062,7 @@ public final class Paper26LiveProbe extends JavaPlugin {
                     "marked combat stat survives legacy NBT item roundtrip");
             getLogger().info("PASS: live legacy NBT read-only fallback and PDC precedence");
             verifyWeaponAbilities();
+            verifyItemGenerators();
             verifyMobSkillCasts();
             verifyEssentialsWarpProvider();
             verifyItemModels();
