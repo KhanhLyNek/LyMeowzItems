@@ -6,7 +6,7 @@ package api.praya.myitems.builder.item;
 
 import api.praya.myitems.builder.lorestats.LoreStatsModifier;
 
-public class ItemTier
+public class ItemTier implements com.lymeowz.item.item.ItemTierDefinition
 {
     private final String id;
     private final String name;
@@ -32,6 +32,15 @@ public class ItemTier
         return this.name;
     }
     
+    @Override
+    public final String id() { return getId(); }
+
+    @Override
+    public final String name() { return getName(); }
+
+    @Override
+    public final String prefix() { return getPrefix(); }
+
     public final LoreStatsModifier getStatsModifier() {
         return this.statsModifier;
     }
