@@ -702,6 +702,30 @@ public final class Paper26LiveProbe extends JavaPlugin {
         check(paths.getDataConfig().getData("Path_File_Command") != null,
                 "old DataConfig API still exposes path dictionary builds");
         final AgarthaLib lymeowzLib = (AgarthaLib) Bukkit.getPluginManager().getPlugin("LyMeowzLib");
+        final com.lymeowz.lib.manager.GameServices libraryServices =
+                com.lymeowz.lib.manager.GameAccess.of(
+                        (com.lymeowz.lib.LyMeowzLib) lymeowzLib);
+        check(libraryServices == lymeowzLib.getGameManager(),
+                "new library manager API resolves original live GameManager");
+        check(com.lymeowz.lib.manager.GameAccess.of(null) == null,
+                "new library manager accessor tolerates missing plugin");
+        check(libraryServices.effectTypeIds().containsAll(
+                        lymeowzLib.getGameManager().getEffectTypeManager().getEffectTypeIds()),
+                "new library manager API preserves effect registry IDs");
+        check(libraryServices.trackedEntityStatsCount()
+                        == lymeowzLib.getGameManager().getStatsEntityManager().getEntityIds().size(),
+                "new library manager API reports same tracked entity stats");
+        check(libraryServices.trackedProjectileCount()
+                        == lymeowzLib.getGameManager().getProjectilePropertiesManager().getProjectileIds().size(),
+                "new library manager API reports same tracked projectiles");
+        check(!libraryServices.hasEffectType("missing-lymeowz-effect-id"),
+                "new library manager effect lookup rejects unknown IDs");
+        try {
+            libraryServices.effectTypeIds().clear();
+            throw new AssertionError("new library manager effect IDs allow mutation");
+        } catch (UnsupportedOperationException expected) {
+            // Legacy effect manager keeps its prior mutable collection signature.
+        }
         check(lymeowzLib.getPluginManager().getCommandManager()
                         instanceof com.lymeowz.lib.command.CommandRegistry,
                 "legacy library manager implements new CommandRegistry API");
