@@ -79,9 +79,10 @@ public class ItemConfig extends HandlerConfig
         final PluginManager pluginManager = this.plugin.getPluginManager();
         final DataManager dataManager = pluginManager.getDataManager();
         final String path = dataManager.getPath("Path_File_Item");
+        final File file = FileUtil.getFile((JavaPlugin)this.plugin, path);
         this.convertOldDatabase();
         this.mapItem.putAll(com.lymeowz.item.config.ItemDefinitions.load(
-                this.plugin, path, this::convertToGame));
+                this.plugin, file, path, this::convertToGame));
     }
     
     private final ItemStack convertToFile(final ItemStack convertItem) {
