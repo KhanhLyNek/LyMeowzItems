@@ -801,6 +801,35 @@ public final class Paper26LiveProbe extends JavaPlugin {
         } catch (UnsupportedOperationException expected) {
             // Legacy effect manager keeps its prior mutable collection signature.
         }
+        final com.lymeowz.lib.manager.PluginServices libraryPluginServices =
+                com.lymeowz.lib.manager.PluginAccess.of(
+                        (com.lymeowz.lib.LyMeowzLib) lymeowzLib);
+        check(libraryPluginServices == lymeowzLib.getPluginManager(),
+                "new LyMeowz library plugin services return original manager instance");
+        check(com.lymeowz.lib.manager.PluginAccess.of(null) == null,
+                "new library plugin service accessor handles missing plugin");
+        check(libraryPluginServices.commands()
+                        == lymeowzLib.getPluginManager().getCommandManager(),
+                "new library plugin services use original live command registry");
+        check(libraryPluginServices.languageIds().containsAll(
+                        lymeowzLib.getPluginManager().getLanguageManager().getLanguageIds()),
+                "new library plugin API preserves original locale IDs");
+        check(libraryPluginServices.languageLines("en", "Argument_AgarthaLib_Help").equals(
+                        lymeowzLib.getPluginManager().getLanguageManager().getListText(
+                                "en", "Argument_AgarthaLib_Help")),
+                "new library plugin API keeps existing help text contents");
+        check(java.util.Objects.equals(libraryPluginServices.placeholder("prefix"),
+                        lymeowzLib.getPluginManager().getPlaceholderManager()
+                                .getPlaceholder("prefix")),
+                "new library placeholder API returns original values");
+        try {
+            libraryPluginServices.languageIds().clear();
+            throw new AssertionError("canonical library language ID collection is mutable");
+        } catch (UnsupportedOperationException expected) { }
+        try {
+            libraryPluginServices.languageLines("en", "Argument_AgarthaLib_Help").clear();
+            throw new AssertionError("canonical library help lines allow mutation");
+        } catch (UnsupportedOperationException expected) { }
         check(lymeowzLib.getPluginManager().getCommandManager()
                         instanceof com.lymeowz.lib.command.CommandRegistry,
                 "legacy library manager implements new CommandRegistry API");
