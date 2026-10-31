@@ -11,7 +11,7 @@ import java.util.HashMap;
 import api.praya.myitems.builder.lorestats.LoreStatsModifier;
 import org.bukkit.Material;
 
-public class ItemType
+public class ItemType implements com.lymeowz.item.item.ItemTypeDefinition
 {
     private final String id;
     private final Material material;
@@ -51,6 +51,27 @@ public class ItemType
         return this.statsModifier;
     }
     
+    @Override
+    public final String id() { return getId(); }
+
+    @Override
+    public final Material material() { return getMaterial(); }
+
+    @Override
+    public final short legacyData() { return getData(); }
+
+    @Override
+    public final boolean shiny() { return isShiny(); }
+
+    @Override
+    public final java.util.Map<Enchantment, Integer> enchantmentLevels() {
+        final java.util.HashMap<Enchantment, Integer> result = new java.util.HashMap<>();
+        for (final Enchantment enchantment : getEnchantments()) {
+            result.put(enchantment, getEnchantmentGrade(enchantment));
+        }
+        return java.util.Collections.unmodifiableMap(result);
+    }
+
     public final Collection<Enchantment> getEnchantments() {
         return this.mapEnchantment.keySet();
     }
