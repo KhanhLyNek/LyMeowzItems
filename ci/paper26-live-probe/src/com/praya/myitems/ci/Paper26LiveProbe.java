@@ -887,10 +887,31 @@ public final class Paper26LiveProbe extends JavaPlugin {
         getLogger().info("PASS: LyMeowz plugin identities, command aliases and old data folders");
     }
 
+    /** Exercise the canonical YAML reader without touching player or server files. */
+    private void verifyItemDefinitions() {
+        final org.bukkit.configuration.file.YamlConfiguration yaml =
+                new org.bukkit.configuration.file.YamlConfiguration();
+        final ItemStack stored = new ItemStack(Material.DIAMOND_SWORD);
+        yaml.set("MixedCaseSword", stored);
+        yaml.set("unrelated-setting", "not an ItemStack");
+
+        final java.util.Map<String, ItemStack> decoded =
+                com.lymeowz.item.config.ItemDefinitions.read(yaml, ItemStack::clone);
+        check(decoded.size() == 1 && decoded.containsKey("MixedCaseSword"),
+                "canonical item YAML reader preserves case-sensitive IDs and skips non-items");
+        check(decoded.get("MixedCaseSword") != stored
+                        && decoded.get("MixedCaseSword").getType() == stored.getType(),
+                "canonical item YAML reader retains original clone conversion");
+        check(stored.getType() == Material.DIAMOND_SWORD,
+                "canonical item YAML reader does not mutate the stored example");
+        getLogger().info("PASS: canonical item YAML decoder and legacy item IDs");
+    }
+
     @Override
     public void onEnable() {
         try {
             verifyRenamedPlugins();
+            verifyItemDefinitions();
             verifyPermissionMigration();
             ItemStack original = new ItemStack(Material.DIAMOND_SWORD);
             final int originalAmount = original.getAmount();
