@@ -53,6 +53,93 @@ public final class Paper26LiveProbe extends JavaPlugin {
         if (!ok) throw new AssertionError(message);
     }
 
+    /** Verify original RPG type/tier builders and canonical YAML readers share live state. */
+    private void verifyItemTypesAndTiers() {
+        final MyItems plugin = (MyItems) Bukkit.getPluginManager().getPlugin("LyMeowzItem");
+        final com.praya.myitems.manager.game.GameManager game = plugin.getGameManager();
+        final com.lymeowz.item.manager.GameServices services =
+                com.lymeowz.item.manager.GameAccess.of(
+                        (com.lymeowz.item.LyMeowzItem) plugin);
+        check(services.itemTypes() == game.getItemTypeManager()
+                        && services.itemTiers() == game.getItemTierManager(),
+                "canonical item type/tier registries share original live managers");
+        check(services.itemTypes().ids().containsAll(
+                        game.getItemTypeManager().getItemTypeIDs())
+                        && services.itemTiers().ids().containsAll(
+                                game.getItemTierManager().getItemTierIDs()),
+                "canonical item type/tier IDs match original configured IDs");
+        check(services.itemTypes().find("missing-type-id") == null
+                        && services.itemTiers().find("missing-tier-id") == null,
+                "canonical type/tier registries preserve missing-ID behavior");
+        try {
+            services.itemTypes().ids().clear();
+            throw new AssertionError("type registry IDs must be read-only");
+        } catch (UnsupportedOperationException expected) { }
+        try {
+            services.itemTiers().ids().clear();
+            throw new AssertionError("tier registry IDs must be read-only");
+        } catch (UnsupportedOperationException expected) { }
+
+        for (final String id : game.getItemTypeManager().getItemTypeIDs()) {
+            final api.praya.myitems.builder.item.ItemType old =
+                    game.getItemTypeManager().getItemType(id);
+            final com.lymeowz.item.item.ItemTypeDefinition view =
+                    services.itemTypes().find(id.toUpperCase(java.util.Locale.ROOT));
+            check(view == old && view.id().equals(id)
+                            && view.material() == old.getMaterial()
+                            && view.legacyData() == old.getData()
+                            && view.shiny() == old.isShiny(),
+                    "canonical type view returns identical live builder and metadata");
+            check(view.enchantmentLevels().size() == old.getEnchantments().size(),
+                    "canonical enchantment view retains all original entries");
+            try {
+                view.enchantmentLevels().clear();
+                throw new AssertionError("type enchantment view must be read-only");
+            } catch (UnsupportedOperationException expected) { }
+        }
+        for (final String id : game.getItemTierManager().getItemTierIDs()) {
+            final api.praya.myitems.builder.item.ItemTier old =
+                    game.getItemTierManager().getItemTier(id);
+            final com.lymeowz.item.item.ItemTierDefinition view =
+                    services.itemTiers().find(id.toUpperCase(java.util.Locale.ROOT));
+            check(view == old && view.id().equals(id)
+                            && view.name().equals(old.getName())
+                            && view.prefix().equals(old.getPrefix()),
+                    "canonical tier view returns identical live builder and metadata");
+        }
+
+        final org.bukkit.configuration.file.YamlConfiguration typeYaml =
+                new org.bukkit.configuration.file.YamlConfiguration();
+        typeYaml.set("MiXeD_Type.Material", "DIAMOND_SWORD");
+        typeYaml.set("MiXeD_Type.Data", 2);
+        typeYaml.set("MiXeD_Type.Shiny", true);
+        typeYaml.set("MiXeD_Type.Modifier.Damage", 1.5d);
+        final java.util.Map<String, api.praya.myitems.builder.item.ItemType> typeRead =
+                com.lymeowz.item.config.ItemTypeDefinitions.read(typeYaml);
+        check(typeRead.size() == 1 && typeRead.containsKey("MiXeD_Type"),
+                "type YAML reader retains original case-sensitive key");
+        final api.praya.myitems.builder.item.ItemType parsedType = typeRead.get("MiXeD_Type");
+        check(parsedType.getMaterial() == Material.DIAMOND_SWORD
+                        && parsedType.getData() == 2 && parsedType.isShiny()
+                        && parsedType.getStatsModifier().getModifier(LoreStatsEnum.DAMAGE) == 1.5d,
+                "type YAML reader retains material, legacy data, shine and damage modifier");
+
+        final org.bukkit.configuration.file.YamlConfiguration tierYaml =
+                new org.bukkit.configuration.file.YamlConfiguration();
+        tierYaml.set("MiXeD_Tier.Name", "&aTier");
+        tierYaml.set("MiXeD_Tier.Prefix", "&7Prefix");
+        tierYaml.set("MiXeD_Tier.Modifier.Health", 1.25d);
+        final java.util.Map<String, api.praya.myitems.builder.item.ItemTier> tierRead =
+                com.lymeowz.item.config.ItemTierDefinitions.read(tierYaml);
+        check(tierRead.size() == 1 && tierRead.containsKey("MiXeD_Tier"),
+                "tier YAML reader retains original case-sensitive key");
+        final api.praya.myitems.builder.item.ItemTier parsedTier = tierRead.get("MiXeD_Tier");
+        check(parsedTier.getName() != null && parsedTier.getPrefix() != null
+                        && parsedTier.getStatsModifier().getModifier(LoreStatsEnum.HEALTH) == 1.25d,
+                "tier YAML reader retains legacy color names and health modifier");
+        getLogger().info("PASS: canonical type/tier YAML and original live builder registries");
+    }
+
     /** Validate all 25 shipped class singletons against the running plugin,
      * configured damage scales, and exact existing lore encode/decode path.
      * Do not fire destructive combat in this startup smoke fixture.
@@ -966,6 +1053,7 @@ public final class Paper26LiveProbe extends JavaPlugin {
                     "marked combat stat survives legacy NBT item roundtrip");
             getLogger().info("PASS: live legacy NBT read-only fallback and PDC precedence");
             verifyWeaponAbilities();
+            verifyItemTypesAndTiers();
             verifyMobSkillCasts();
             verifyEssentialsWarpProvider();
             verifyItemModels();
