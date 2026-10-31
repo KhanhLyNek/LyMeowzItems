@@ -42,6 +42,7 @@ with ZipFile(candidates[0]) as z:
         "com/lymeowz/item/ability/WeaponCastDamage.class",
         "com/lymeowz/item/ability/WeaponEffectDuration.class",
         "com/lymeowz/item/ability/WeaponProperties.class",
+        "com/lymeowz/item/ability/WeaponAbilities.class",
         "com/lymeowz/item/ability/AbilityScaling.class",
         "com/lymeowz/item/manager/WeaponRegistry.class",
         "com/lymeowz/item/manager/WeaponLookup.class",

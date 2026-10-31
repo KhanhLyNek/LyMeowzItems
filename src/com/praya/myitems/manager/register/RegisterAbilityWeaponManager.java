@@ -68,7 +68,9 @@ public class RegisterAbilityWeaponManager extends HandlerManager implements com.
 
     @Override
     public final Collection<? extends com.lymeowz.item.ability.WeaponAbility> weapons() {
-        return getAllAbilityWeapon();
+        // The canonical facade must not leak the mutable HashMap.values()
+        // collection used by the legacy registry's original API.
+        return java.util.Collections.unmodifiableCollection(getAllAbilityWeapon());
     }
 
     public final boolean isExists(final String ability) {

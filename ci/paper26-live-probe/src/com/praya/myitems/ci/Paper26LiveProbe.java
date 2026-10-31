@@ -77,6 +77,21 @@ public final class Paper26LiveProbe extends JavaPlugin {
         check(registered instanceof com.lymeowz.item.manager.WeaponRegistry,
                 "legacy skill manager exposes the new LyMeowz registry API");
         final com.lymeowz.item.manager.WeaponRegistry modernRegistry = registered;
+        final com.lymeowz.item.LyMeowzItem newPlugin =
+                (com.lymeowz.item.LyMeowzItem) myitems;
+        check(com.lymeowz.item.ability.WeaponAbilities.registry(newPlugin) == modernRegistry,
+                "new public skill API uses exact original registry instance");
+        check(com.lymeowz.item.ability.WeaponAbilities.all(newPlugin).size() == names.length,
+                "new public skill facade exposes all configured abilities");
+        check(com.lymeowz.item.ability.WeaponAbilities.find(null, "Poison") == null
+                        && com.lymeowz.item.ability.WeaponAbilities.all(null).isEmpty(),
+                "new public skill facade handles unavailable plugin safely");
+        try {
+            modernRegistry.weapons().clear();
+            throw new AssertionError("canonical weapon view permits registry mutation");
+        } catch (UnsupportedOperationException expected) {
+            // Legacy getAllAbilityWeapon() remains unchanged; only new API is read-only.
+        }
         check(modernRegistry.weapons().size() == names.length,
                 "new weapon registry reuses all 25 old singletons");
         check(modernRegistry.weapon("missing-skill") == null
@@ -98,6 +113,8 @@ public final class Paper26LiveProbe extends JavaPlugin {
                     name + " implements new weapon ability API");
             check(registered.getAbilityWeapon(id) == ability,
                     name + " is registered by its original ID");
+            check(com.lymeowz.item.ability.WeaponAbilities.find(newPlugin, id) == ability,
+                    name + " resolved through public new-package skill facade");
             check(modernRegistry.weapon(id.toUpperCase(java.util.Locale.ROOT)) == ability,
                     name + " case-insensitive new manager lookup keeps singleton identity");
             check(ability.getKeyLore() != null && !ability.getKeyLore().isBlank(),
