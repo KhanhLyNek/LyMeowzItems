@@ -23,9 +23,9 @@ public final class ItemDefinitions {
     }
 
     public static HashMap<String, ItemStack> load(final MyItems plugin,
+                                                  final File file,
                                                   final String path,
                                                   final UnaryOperator<ItemStack> toGame) {
-        final File file = FileUtil.getFile((JavaPlugin) plugin, path);
         if (!file.exists()) {
             FileUtil.saveResource((JavaPlugin) plugin, path);
         }
