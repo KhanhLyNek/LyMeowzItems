@@ -114,6 +114,11 @@ public class GameManager implements com.lymeowz.item.manager.GameServices
     }
 
     @Override
+    public final com.lymeowz.item.manager.ItemGeneratorRegistry itemGenerators() {
+        return this.itemGeneratorManager;
+    }
+
+    @Override
     public final com.lymeowz.item.manager.ItemCatalog items() {
         return this.itemManager;
     }
