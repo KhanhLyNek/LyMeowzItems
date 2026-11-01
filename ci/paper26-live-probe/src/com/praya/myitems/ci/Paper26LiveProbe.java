@@ -53,6 +53,240 @@ public final class Paper26LiveProbe extends JavaPlugin {
         if (!ok) throw new AssertionError(message);
     }
 
+    /** Validate migrated generator YAML and the original live gameplay builder. */
+    private void verifyItemGenerators() {
+        final MyItems plugin = (MyItems) Bukkit.getPluginManager().getPlugin("LyMeowzItem");
+        final com.praya.myitems.manager.game.GameManager game = plugin.getGameManager();
+        final com.praya.myitems.manager.game.ItemGeneratorManager legacy =
+                game.getItemGeneratorManager();
+        final com.lymeowz.item.manager.GameServices services =
+                com.lymeowz.item.manager.GameAccess.of(
+                        (com.lymeowz.item.LyMeowzItem) plugin);
+        check(services.itemGenerators() == legacy,
+                "canonical item generator registry shares the original manager instance");
+        check(services.itemGenerators().ids().containsAll(legacy.getItemGeneratorIDs()),
+                "generator IDs remain unchanged");
+        check(services.itemGenerators().find("missing-generator-id") == null,
+                "canonical generator registry preserves missing IDs");
+        try {
+            services.itemGenerators().ids().clear();
+            throw new AssertionError("canonical generator IDs must be immutable");
+        } catch (UnsupportedOperationException expected) { }
+
+        for (final String id : legacy.getItemGeneratorIDs()) {
+            final api.praya.myitems.builder.item.ItemGenerator original =
+                    legacy.getItemGenerator(id);
+            final com.lymeowz.item.item.ItemGeneratorDefinition view =
+                    services.itemGenerators().find(id.toUpperCase(java.util.Locale.ROOT));
+            check(view == original, "canonical lookup returns the original live generator");
+            check(view.id().equals(id) && view.displayName().equals(original.getDisplayName()),
+                    "generator ID and display name preserved");
+            check(view.typeWeights().equals(original.getMapPossibilityType())
+                            && view.tierWeights().equals(original.getMapPossibilityTier()),
+                    "generator type/tier probability weights preserved");
+            try {
+                view.typeWeights().clear();
+                throw new AssertionError("generator type weights must be read-only");
+            } catch (UnsupportedOperationException expected) { }
+            try {
+                view.loreLines().clear();
+                throw new AssertionError("generator lore must be read-only");
+            } catch (UnsupportedOperationException expected) { }
+        }
+
+        final java.util.Collection<String> types = game.getItemTypeManager().getItemTypeIDs();
+        final java.util.Collection<String> tiers = game.getItemTierManager().getItemTierIDs();
+        check(!types.isEmpty() && !tiers.isEmpty(), "original type/tier configs loaded");
+        final String typeId = types.iterator().next();
+        final String tierId = tiers.iterator().next();
+        final org.bukkit.configuration.file.YamlConfiguration yaml =
+                new org.bukkit.configuration.file.YamlConfiguration();
+        yaml.set("MiXeD_Generator.Display_Name", "&aLegacy Name");
+        yaml.set("MiXeD_Generator.Unbreakable", true);
+        yaml.set("MiXeD_Generator.ItemFlags", List.of("HIDE_ATTRIBUTES"));
+        yaml.set("MiXeD_Generator.Lores", List.of("&7Kept Lore"));
+        yaml.set("MiXeD_Generator.Type." + typeId + ".Possibility", 7);
+        yaml.set("MiXeD_Generator.Type." + typeId + ".Names", List.of("Legacy Name"));
+        yaml.set("MiXeD_Generator.Tier." + tierId + ".Possibility", 13);
+        yaml.set("MiXeD_Generator.Tier." + tierId + ".Additional_Lores", List.of("&7extra"));
+        final java.util.Map<String, api.praya.myitems.builder.item.ItemGenerator> decoded =
+                com.lymeowz.item.config.ItemGeneratorDefinitions.read(
+                        yaml, game.getItemTypeManager(), game.getItemTierManager());
+        check(decoded.size() == 1 && decoded.containsKey("MiXeD_Generator"),
+                "generator YAML reader retains exact mixed-case IDs");
+        final api.praya.myitems.builder.item.ItemGenerator generator =
+                decoded.get("MiXeD_Generator");
+        check(generator.isUnbreakable()
+                        && generator.getFlags().equals(List.of("HIDE_ATTRIBUTES"))
+                        && generator.getLores().equals(List.of("&7Kept Lore")),
+                "generator YAML reader retains Unbreakable, ItemFlags alias and lore");
+        check(generator.getMapPossibilityType().get(typeId) == 7
+                        && generator.getMapPossibilityTier().get(tierId) == 13,
+                "generator YAML reader retains configured weights");
+        check(generator.getMapType().values().iterator().next().getNames()
+                        .equals(List.of("Legacy Name")),
+                "legacy Names alias retained");
+        check(generator.getMapTier().values().iterator().next().getAdditionalLores()
+                        .equals(List.of("&7extra")),
+                "legacy Additional_Lores retained");
+
+        final java.util.HashMap<api.praya.myitems.builder.item.ItemType,
+                api.praya.myitems.builder.item.ItemGeneratorType> validTypes = new java.util.HashMap<>();
+        validTypes.put(game.getItemTypeManager().getItemType(typeId),
+                new api.praya.myitems.builder.item.ItemGeneratorType(
+                        1, List.of(), List.of("test")));
+        final java.util.HashMap<api.praya.myitems.builder.item.ItemTier,
+                api.praya.myitems.builder.item.ItemGeneratorTier> missingTiers = new java.util.HashMap<>();
+        missingTiers.put(new api.praya.myitems.builder.item.ItemTier(
+                        "missing-tier-for-probe", "", "", null),
+                new api.praya.myitems.builder.item.ItemGeneratorTier(1, List.of()));
+        final api.praya.myitems.builder.item.ItemGenerator missingTierGenerator =
+                new api.praya.myitems.builder.item.ItemGenerator(
+                        "invalid-tier", "test", false, List.of(), List.of(),
+                        validTypes, missingTiers);
+        check(missingTierGenerator.generateItem() == null,
+                "generator safely skips removed/missing tiers without throwing");
+        getLogger().info("PASS: legacy item generator YAML, live registry and missing-tier guard");
+    }
+
+    /** Verify original RPG type/tier builders and canonical YAML readers share live state. */
+    private void verifyItemTypesAndTiers() {
+        final MyItems plugin = (MyItems) Bukkit.getPluginManager().getPlugin("LyMeowzItem");
+        final com.praya.myitems.manager.game.GameManager game = plugin.getGameManager();
+        final com.lymeowz.item.manager.GameServices services =
+                com.lymeowz.item.manager.GameAccess.of(
+                        (com.lymeowz.item.LyMeowzItem) plugin);
+        check(services.itemTypes() == game.getItemTypeManager()
+                        && services.itemTiers() == game.getItemTierManager(),
+                "canonical item type/tier registries share original live managers");
+        check(services.itemTypes().ids().containsAll(
+                        game.getItemTypeManager().getItemTypeIDs())
+                        && services.itemTiers().ids().containsAll(
+                                game.getItemTierManager().getItemTierIDs()),
+                "canonical item type/tier IDs match original configured IDs");
+        check(services.itemTypes().find("missing-type-id") == null
+                        && services.itemTiers().find("missing-tier-id") == null,
+                "canonical type/tier registries preserve missing-ID behavior");
+        try {
+            services.itemTypes().ids().clear();
+            throw new AssertionError("type registry IDs must be read-only");
+        } catch (UnsupportedOperationException expected) { }
+        try {
+            services.itemTiers().ids().clear();
+            throw new AssertionError("tier registry IDs must be read-only");
+        } catch (UnsupportedOperationException expected) { }
+
+        for (final String id : game.getItemTypeManager().getItemTypeIDs()) {
+            final api.praya.myitems.builder.item.ItemType old =
+                    game.getItemTypeManager().getItemType(id);
+            final com.lymeowz.item.item.ItemTypeDefinition view =
+                    services.itemTypes().find(id.toUpperCase(java.util.Locale.ROOT));
+            check(view == old && view.id().equals(id)
+                            && view.material() == old.getMaterial()
+                            && view.legacyData() == old.getData()
+                            && view.shiny() == old.isShiny(),
+                    "canonical type view returns identical live builder and metadata");
+            check(view.enchantmentLevels().size() == old.getEnchantments().size(),
+                    "canonical enchantment view retains all original entries");
+            try {
+                view.enchantmentLevels().clear();
+                throw new AssertionError("type enchantment view must be read-only");
+            } catch (UnsupportedOperationException expected) { }
+        }
+        for (final String id : game.getItemTierManager().getItemTierIDs()) {
+            final api.praya.myitems.builder.item.ItemTier old =
+                    game.getItemTierManager().getItemTier(id);
+            final com.lymeowz.item.item.ItemTierDefinition view =
+                    services.itemTiers().find(id.toUpperCase(java.util.Locale.ROOT));
+            check(view == old && view.id().equals(id)
+                            && view.name().equals(old.getName())
+                            && view.prefix().equals(old.getPrefix()),
+                    "canonical tier view returns identical live builder and metadata");
+        }
+
+        final org.bukkit.configuration.file.YamlConfiguration typeYaml =
+                new org.bukkit.configuration.file.YamlConfiguration();
+        typeYaml.set("MiXeD_Type.Material", "DIAMOND_SWORD");
+        typeYaml.set("MiXeD_Type.Data", 2);
+        typeYaml.set("MiXeD_Type.Shiny", true);
+        typeYaml.set("MiXeD_Type.Modifier.Damage", 1.5d);
+        final java.util.Map<String, api.praya.myitems.builder.item.ItemType> typeRead =
+                com.lymeowz.item.config.ItemTypeDefinitions.read(typeYaml);
+        check(typeRead.size() == 1 && typeRead.containsKey("MiXeD_Type"),
+                "type YAML reader retains original case-sensitive key");
+        final api.praya.myitems.builder.item.ItemType parsedType = typeRead.get("MiXeD_Type");
+        check(parsedType.getMaterial() == Material.DIAMOND_SWORD
+                        && parsedType.getData() == 2 && parsedType.isShiny()
+                        && parsedType.getStatsModifier().getModifier(LoreStatsEnum.DAMAGE) == 1.5d,
+                "type YAML reader retains material, legacy data, shine and damage modifier");
+
+        final org.bukkit.configuration.file.YamlConfiguration tierYaml =
+                new org.bukkit.configuration.file.YamlConfiguration();
+        tierYaml.set("MiXeD_Tier.Name", "&aTier");
+        tierYaml.set("MiXeD_Tier.Prefix", "&7Prefix");
+        tierYaml.set("MiXeD_Tier.Modifier.Health", 1.25d);
+        final java.util.Map<String, api.praya.myitems.builder.item.ItemTier> tierRead =
+                com.lymeowz.item.config.ItemTierDefinitions.read(tierYaml);
+        check(tierRead.size() == 1 && tierRead.containsKey("MiXeD_Tier"),
+                "tier YAML reader retains original case-sensitive key");
+        final api.praya.myitems.builder.item.ItemTier parsedTier = tierRead.get("MiXeD_Tier");
+        check(parsedTier.getName() != null && parsedTier.getPrefix() != null
+                        && parsedTier.getStatsModifier().getModifier(LoreStatsEnum.HEALTH) == 1.25d,
+                "tier YAML reader retains legacy color names and health modifier");
+        getLogger().info("PASS: canonical type/tier YAML and original live builder registries");
+    }
+
+    /** Validate read-only elemental potion metadata without applying gameplay effects. */
+    private void verifyElementPotionViews() {
+        final MyItems plugin = (MyItems) Bukkit.getPluginManager().getPlugin("LyMeowzItem");
+        final com.lymeowz.item.manager.ElementRegistry registry =
+                com.lymeowz.item.manager.GameAccess.of(
+                        (com.lymeowz.item.LyMeowzItem) plugin).elements();
+        check(registry == plugin.getGameManager().getElementManager(),
+                "canonical element registry shares original live manager");
+        for (final String id : registry.ids()) {
+            final com.lymeowz.item.element.ElementDefinition definition = registry.find(id);
+            final api.praya.myitems.builder.element.Element legacy =
+                    plugin.getGameManager().getElementManager().getElementBuild(id);
+            check(definition == legacy && definition.potions() == legacy.getPotionBuild(),
+                    "canonical element potion definition is the original live builder");
+            check(definition.potions().attackerEffects().size()
+                            == legacy.getPotionBuild().getPotionAttacker().size()
+                            && definition.potions().victimEffects().size()
+                            == legacy.getPotionBuild().getPotionVictims().size(),
+                    "element potion effect IDs are preserved exactly");
+            try {
+                definition.potions().attackerEffects().clear();
+                throw new AssertionError("canonical element attacker effects are mutable");
+            } catch (UnsupportedOperationException expected) { }
+            try {
+                definition.potions().victimEffects().clear();
+                throw new AssertionError("canonical element victim effects are mutable");
+            } catch (UnsupportedOperationException expected) { }
+        }
+
+        final org.bukkit.potion.PotionEffectType speed =
+                com.praya.agarthalib.utility.PotionUtil.getPotionEffectType("speed");
+        check(speed != null, "existing potion speed alias resolves on Paper 26.3");
+        final java.util.HashMap<org.bukkit.potion.PotionEffectType,
+                api.praya.myitems.builder.potion.PotionProperties> source = new java.util.HashMap<>();
+        source.put(speed, new api.praya.myitems.builder.potion.PotionProperties(2, 0.5d, 1.5d));
+        final api.praya.myitems.builder.element.ElementPotion potion =
+                new api.praya.myitems.builder.element.ElementPotion(source, new java.util.HashMap<>());
+        final java.util.Map<org.bukkit.potion.PotionEffectType,
+                com.lymeowz.item.element.ElementEffect> snapshot = potion.attackerEffects();
+        final com.lymeowz.item.element.ElementEffect first = snapshot.get(speed);
+        check(first.grade() == 2 && first.chanceScale() == 0.5d
+                        && first.durationScale() == 1.5d,
+                "canonical effect snapshot retains original grade/chance/duration semantics");
+        source.put(speed, new api.praya.myitems.builder.potion.PotionProperties(4, 0.25d, 3.0d));
+        check(snapshot.get(speed).grade() == 2 && potion.attackerEffects().get(speed).grade() == 4,
+                "previous immutable snapshot does not track mutations in legacy potion builder");
+        check(potion.getPotionAttacker() == source,
+                "original legacy mutable potion map API remains unchanged");
+        getLogger().info("PASS: element registry and immutable potion metadata snapshots");
+    }
+
     /** Validate all 25 shipped class singletons against the running plugin,
      * configured damage scales, and exact existing lore encode/decode path.
      * Do not fire destructive combat in this startup smoke fixture.
@@ -987,6 +1221,9 @@ public final class Paper26LiveProbe extends JavaPlugin {
                     "marked combat stat survives legacy NBT item roundtrip");
             getLogger().info("PASS: live legacy NBT read-only fallback and PDC precedence");
             verifyWeaponAbilities();
+            verifyElementPotionViews();
+            verifyItemTypesAndTiers();
+            verifyItemGenerators();
             verifyMobSkillCasts();
             verifyEssentialsWarpProvider();
             verifyItemModels();

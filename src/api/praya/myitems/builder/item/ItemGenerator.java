@@ -34,7 +34,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class ItemGenerator
+public class ItemGenerator implements com.lymeowz.item.item.ItemGeneratorDefinition
 {
     private final String id;
     private final String displayName;
@@ -93,6 +93,41 @@ public class ItemGenerator
         return this.mapTier;
     }
     
+    @Override
+    public final String id() {
+        return getId();
+    }
+
+    @Override
+    public final String displayName() {
+        return getDisplayName();
+    }
+
+    @Override
+    public final boolean unbreakable() {
+        return isUnbreakable();
+    }
+
+    @Override
+    public final java.util.List<String> loreLines() {
+        return java.util.Collections.unmodifiableList(new java.util.ArrayList<>(getLores()));
+    }
+
+    @Override
+    public final java.util.List<String> flagNames() {
+        return java.util.Collections.unmodifiableList(new java.util.ArrayList<>(getFlags()));
+    }
+
+    @Override
+    public final java.util.Map<String, Integer> typeWeights() {
+        return java.util.Collections.unmodifiableMap(new java.util.HashMap<>(getMapPossibilityType()));
+    }
+
+    @Override
+    public final java.util.Map<String, Integer> tierWeights() {
+        return java.util.Collections.unmodifiableMap(new java.util.HashMap<>(getMapPossibilityTier()));
+    }
+
     public final HashMap<String, Integer> getMapPossibilityType() {
         return this.getMapPossibilityType(null);
     }
@@ -144,7 +179,7 @@ public class ItemGenerator
             final String idTier = MapUtil.getRandomIdByInteger((HashMap)mapPossibilityTier);
             final ItemType itemType = itemTypeManager.getItemType(idType);
             final ItemTier itemTier = itemTierManager.getItemTier(idTier);
-            if (itemType != null && itemType != null) {
+            if (itemType != null && itemTier != null) {
                 final Material material = itemType.getMaterial();
                 final short data = itemType.getData();
                 final MaterialEnum materialEnum = MaterialEnum.getMaterialEnum(material, (int)data);

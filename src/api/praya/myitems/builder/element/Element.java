@@ -52,6 +52,11 @@ public class Element implements com.lymeowz.item.element.ElementDefinition
     }
 
     @Override
+    public final com.lymeowz.item.element.ElementPotionDefinition potions() {
+        return getPotionBuild();
+    }
+
+    @Override
     public final java.util.Map<String, Double> resistanceSnapshot() {
         return java.util.Collections.unmodifiableMap(new HashMap<>(getResistance()));
     }

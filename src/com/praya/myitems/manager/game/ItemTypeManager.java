@@ -10,7 +10,7 @@ import com.praya.myitems.MyItems;
 import com.praya.myitems.config.game.ItemTypeConfig;
 import com.praya.myitems.builder.handler.HandlerManager;
 
-public class ItemTypeManager extends HandlerManager
+public class ItemTypeManager extends HandlerManager implements com.lymeowz.item.manager.ItemTypeRegistry
 {
     private final ItemTypeConfig itemTypeConfig;
     
@@ -35,6 +35,16 @@ public class ItemTypeManager extends HandlerManager
         return this.getItemTypeConfig().getItemType(id);
     }
     
+    @Override
+    public final java.util.Collection<String> ids() {
+        return java.util.Collections.unmodifiableList(new java.util.ArrayList<>(getItemTypeIDs()));
+    }
+
+    @Override
+    public final com.lymeowz.item.item.ItemTypeDefinition find(final String id) {
+        return id == null ? null : getItemType(id);
+    }
+
     public final boolean isItemTypeExists(final String id) {
         return this.getItemType(id) != null;
     }
