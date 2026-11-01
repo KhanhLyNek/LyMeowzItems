@@ -56,6 +56,9 @@ public final class ItemTypeDefinitions {
         final HashMap<String, ItemType> result = new HashMap<>();
         for (final String key : config.getKeys(false)) {
             final ConfigurationSection mainDataSection = config.getConfigurationSection(key);
+            if (mainDataSection == null) {
+                continue;
+            }
             final HashMap<Enchantment, Integer> mapEnchantment = new HashMap<Enchantment, Integer>();
             final HashMap<Slot, ItemTypeNBT> mapNBT = new HashMap<Slot, ItemTypeNBT>();
             Material material = null;
@@ -74,6 +77,9 @@ public final class ItemTypeDefinitions {
                 }
                 else if (mainData.equalsIgnoreCase("Enchantment")) {
                     final ConfigurationSection enchantmentDataSection = mainDataSection.getConfigurationSection(mainData);
+                    if (enchantmentDataSection == null) {
+                        continue;
+                    }
                     for (final String enchantmentData : enchantmentDataSection.getKeys(false)) {
                         final Enchantment enchantment = EnchantmentUtil.getEnchantment(enchantmentData);
                         if (enchantment != null) {
@@ -84,10 +90,16 @@ public final class ItemTypeDefinitions {
                 }
                 else if (mainData.equalsIgnoreCase("NBT")) {
                     final ConfigurationSection nbtDataSection = mainDataSection.getConfigurationSection(mainData);
+                    if (nbtDataSection == null) {
+                        continue;
+                    }
                     for (final String nbtData : nbtDataSection.getKeys(false)) {
                         final Slot slot = Slot.get(nbtData);
                         if (slot != null) {
                             final ConfigurationSection tagsDataSection = nbtDataSection.getConfigurationSection(nbtData);
+                            if (tagsDataSection == null) {
+                                continue;
+                            }
                             final HashMap<TagsAttribute, Double> mapTagsAttribute = new HashMap<TagsAttribute, Double>();
                             for (final String tagsData : tagsDataSection.getKeys(false)) {
                                 final TagsAttribute tagsAttribute = TagsAttribute.getTagsAttribute(tagsData);
@@ -106,6 +118,9 @@ public final class ItemTypeDefinitions {
                         continue;
                     }
                     final ConfigurationSection modifierDataSection = mainDataSection.getConfigurationSection(mainData);
+                    if (modifierDataSection == null) {
+                        continue;
+                    }
                     double damage = 1.0;
                     double penetration = 1.0;
                     double pvpDamage = 1.0;

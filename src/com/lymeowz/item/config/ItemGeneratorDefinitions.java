@@ -55,6 +55,9 @@ public final class ItemGeneratorDefinitions {
         final HashMap<String, ItemGenerator> mapItemGenerator = new HashMap<>();
         for (final String key : config.getKeys(false)) {
             final ConfigurationSection dataSection = config.getConfigurationSection(key);
+            if (dataSection == null) {
+                continue;
+            }
             final List<String> lores = new ArrayList<String>();
             final List<String> flags = new ArrayList<String>();
             final HashMap<ItemType, ItemGeneratorType> mapType = new HashMap<ItemType, ItemGeneratorType>();
@@ -76,10 +79,16 @@ public final class ItemGeneratorDefinitions {
                 }
                 else if (data.equalsIgnoreCase("Type")) {
                     final ConfigurationSection typeSection = dataSection.getConfigurationSection(data);
+                    if (typeSection == null) {
+                        continue;
+                    }
                     for (final String type : typeSection.getKeys(false)) {
                         final ItemType itemType = itemTypeManager.getItemType(type);
                         if (itemType != null) {
                             final ConfigurationSection typePropertiesSection = typeSection.getConfigurationSection(type);
+                            if (typePropertiesSection == null) {
+                                continue;
+                            }
                             final List<String> description = new ArrayList<String>();
                             final List<String> names = new ArrayList<String>();
                             int possibility = 1;
@@ -111,10 +120,16 @@ public final class ItemGeneratorDefinitions {
                         continue;
                     }
                     final ConfigurationSection tierSection = dataSection.getConfigurationSection(data);
+                    if (tierSection == null) {
+                        continue;
+                    }
                     for (final String tier : tierSection.getKeys(false)) {
                         final ItemTier itemTier = itemTierManager.getItemTier(tier);
                         if (itemTier != null) {
                             final ConfigurationSection tierPropertiesSection = tierSection.getConfigurationSection(tier);
+                            if (tierPropertiesSection == null) {
+                                continue;
+                            }
                             final List<String> additionalLores = new ArrayList<String>();
                             int possibility2 = 1;
                             for (final String tierProperties : tierPropertiesSection.getKeys(false)) {

@@ -109,11 +109,21 @@ public final class Paper26LiveProbe extends JavaPlugin {
         yaml.set("MiXeD_Generator.Type." + typeId + ".Names", List.of("Legacy Name"));
         yaml.set("MiXeD_Generator.Tier." + tierId + ".Possibility", 13);
         yaml.set("MiXeD_Generator.Tier." + tierId + ".Additional_Lores", List.of("&7extra"));
+        yaml.set("Ignored_Scalar_Generator", "not an item generator");
         final java.util.Map<String, api.praya.myitems.builder.item.ItemGenerator> decoded =
                 com.lymeowz.item.config.ItemGeneratorDefinitions.read(
                         yaml, game.getItemTypeManager(), game.getItemTierManager());
         check(decoded.size() == 1 && decoded.containsKey("MiXeD_Generator"),
                 "generator YAML reader retains exact mixed-case IDs");
+        final org.bukkit.configuration.file.YamlConfiguration malformedGenerator =
+                new org.bukkit.configuration.file.YamlConfiguration();
+        malformedGenerator.set("Broken_Generator.Display_Name", "&aBroken but safe");
+        malformedGenerator.set("Broken_Generator.Type", "invalid-section");
+        malformedGenerator.set("Broken_Generator.Tier", 12);
+        check(com.lymeowz.item.config.ItemGeneratorDefinitions.read(
+                        malformedGenerator, game.getItemTypeManager(),
+                        game.getItemTierManager()).size() == 1,
+                "malformed generator subsections are skipped without an NPE");
         final api.praya.myitems.builder.item.ItemGenerator generator =
                 decoded.get("MiXeD_Generator");
         check(generator.isUnbreakable()
@@ -210,6 +220,9 @@ public final class Paper26LiveProbe extends JavaPlugin {
         typeYaml.set("MiXeD_Type.Data", 2);
         typeYaml.set("MiXeD_Type.Shiny", true);
         typeYaml.set("MiXeD_Type.Modifier.Damage", 1.5d);
+        typeYaml.set("Ignored_Scalar_Type", "not an item type");
+        typeYaml.set("MiXeD_Type.Enchantment", "not a section");
+        typeYaml.set("MiXeD_Type.NBT", 1);
         final java.util.Map<String, api.praya.myitems.builder.item.ItemType> typeRead =
                 com.lymeowz.item.config.ItemTypeDefinitions.read(typeYaml);
         check(typeRead.size() == 1 && typeRead.containsKey("MiXeD_Type"),
@@ -225,6 +238,7 @@ public final class Paper26LiveProbe extends JavaPlugin {
         tierYaml.set("MiXeD_Tier.Name", "&aTier");
         tierYaml.set("MiXeD_Tier.Prefix", "&7Prefix");
         tierYaml.set("MiXeD_Tier.Modifier.Health", 1.25d);
+        tierYaml.set("Ignored_Scalar_Tier", "not an item tier");
         final java.util.Map<String, api.praya.myitems.builder.item.ItemTier> tierRead =
                 com.lymeowz.item.config.ItemTierDefinitions.read(tierYaml);
         check(tierRead.size() == 1 && tierRead.containsKey("MiXeD_Tier"),
@@ -233,6 +247,13 @@ public final class Paper26LiveProbe extends JavaPlugin {
         check(parsedTier.getName() != null && parsedTier.getPrefix() != null
                         && parsedTier.getStatsModifier().getModifier(LoreStatsEnum.HEALTH) == 1.25d,
                 "tier YAML reader retains legacy color names and health modifier");
+        final org.bukkit.configuration.file.YamlConfiguration malformedTier =
+                new org.bukkit.configuration.file.YamlConfiguration();
+        malformedTier.set("Broken_Tier.Name", "Broken but safe");
+        malformedTier.set("Broken_Tier.Modifier", "not-a-section");
+        check(com.lymeowz.item.config.ItemTierDefinitions.read(malformedTier)
+                        .containsKey("Broken_Tier"),
+                "malformed tier modifier section uses default stats without an NPE");
         getLogger().info("PASS: canonical type/tier YAML and original live builder registries");
     }
 

@@ -50,6 +50,9 @@ public final class ItemTierDefinitions {
         final HashMap<String, ItemTier> result = new HashMap<>();
         for (final String key : config.getKeys(false)) {
             final ConfigurationSection mainDataSection = config.getConfigurationSection(key);
+            if (mainDataSection == null) {
+                continue;
+            }
             String name = "";
             String prefix = "";
             LoreStatsModifier statsModifier = new LoreStatsModifier();
@@ -65,6 +68,9 @@ public final class ItemTierDefinitions {
                         continue;
                     }
                     final ConfigurationSection modifierDataSection = mainDataSection.getConfigurationSection(mainData);
+                    if (modifierDataSection == null) {
+                        continue;
+                    }
                     double damage = 1.0;
                     double penetration = 1.0;
                     double pvpDamage = 1.0;
