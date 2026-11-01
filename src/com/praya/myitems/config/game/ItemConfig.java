@@ -81,18 +81,8 @@ public class ItemConfig extends HandlerConfig
         final String path = dataManager.getPath("Path_File_Item");
         final File file = FileUtil.getFile((JavaPlugin)this.plugin, path);
         this.convertOldDatabase();
-        if (!file.exists()) {
-            FileUtil.saveResource((JavaPlugin)this.plugin, path);
-        }
-        final FileConfiguration config = FileUtil.getFileConfiguration(file);
-        for (final String key : config.getKeys(false)) {
-            final ItemStack item = config.getItemStack(key);
-            if (item != null) {
-                final ItemStack gameItem = this.convertToGame(item);
-                EquipmentUtil.colorful(gameItem);
-                this.mapItem.put(key, gameItem);
-            }
-        }
+        this.mapItem.putAll(com.lymeowz.item.config.ItemDefinitions.load(
+                this.plugin, file, path, this::convertToGame));
     }
     
     private final ItemStack convertToFile(final ItemStack convertItem) {
