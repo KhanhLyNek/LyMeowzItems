@@ -7,7 +7,7 @@ package api.praya.myitems.builder.socket;
 import java.util.HashMap;
 import core.praya.agarthalib.enums.main.SlotType;
 
-public class SocketGemsTree
+public class SocketGemsTree implements com.lymeowz.item.socket.SocketDefinition
 {
     private final String gems;
     private final int maxGrade;
@@ -37,6 +37,32 @@ public class SocketGemsTree
         return this.mapSocket;
     }
     
+    @Override
+    public final String id() {
+        return getGems();
+    }
+
+    @Override
+    public final int maxGrade() {
+        return getMaxGrade();
+    }
+
+    @Override
+    public final String applicableItemType() {
+        return this.typeItem == null ? null : this.typeItem.name();
+    }
+
+    @Override
+    public final java.util.Collection<Integer> availableGrades() {
+        return java.util.Collections.unmodifiableList(
+                new java.util.ArrayList<>(this.mapSocket.keySet()));
+    }
+
+    @Override
+    public final com.lymeowz.item.socket.SocketGemDefinition findGrade(final int grade) {
+        return getSocketBuild(grade);
+    }
+
     public final boolean isGemsAvailable(final int grade) {
         return this.mapSocket.containsKey(grade);
     }

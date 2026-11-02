@@ -10,7 +10,7 @@ import com.praya.myitems.MyItems;
 import core.praya.agarthalib.enums.main.SlotType;
 import org.bukkit.inventory.ItemStack;
 
-public class SocketGems
+public class SocketGems implements com.lymeowz.item.socket.SocketGemDefinition
 {
     private final ItemStack item;
     private final String keyLore;
@@ -58,6 +58,37 @@ public class SocketGems
         return this.socketProperties;
     }
     
+    @Override
+    public final String socketId() {
+        return getGems();
+    }
+
+    @Override
+    public final int gemGrade() {
+        return getGrade();
+    }
+
+    @Override
+    public final String loreKey() {
+        return getKeyLore();
+    }
+
+    @Override
+    public final double successRate() {
+        return getSuccessRate();
+    }
+
+    @Override
+    public final String applicableItemType() {
+        return this.typeItem == null ? null : this.typeItem.name();
+    }
+
+    @Override
+    public final ItemStack itemSnapshot() {
+        // getItem() already returns a cloned ItemStack.
+        return getItem();
+    }
+
     public final SocketGemsTree getSocketTree() {
         final MyItems plugin = (MyItems)JavaPlugin.getProvidingPlugin((Class)MyItems.class);
         final SocketManager socketManager = plugin.getGameManager().getSocketManager();

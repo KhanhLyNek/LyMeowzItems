@@ -24,7 +24,7 @@ import com.praya.myitems.MyItems;
 import com.praya.myitems.config.game.SocketConfig;
 import com.praya.myitems.builder.handler.HandlerManager;
 
-public class SocketManager extends HandlerManager
+public class SocketManager extends HandlerManager implements com.lymeowz.item.manager.SocketRegistry
 {
     private final SocketConfig socketConfig;
     
@@ -49,6 +49,17 @@ public class SocketManager extends HandlerManager
         return this.getSocketConfig().getSocketTree(id);
     }
     
+    @Override
+    public final Collection<String> ids() {
+        return java.util.Collections.unmodifiableList(
+                new java.util.ArrayList<>(getSocketIDs()));
+    }
+
+    @Override
+    public final com.lymeowz.item.socket.SocketDefinition find(final String id) {
+        return getSocketTree(id);
+    }
+
     public final boolean isExist(final String name) {
         return this.getSocketTree(name) != null;
     }

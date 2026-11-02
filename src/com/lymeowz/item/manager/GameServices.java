@@ -14,6 +14,7 @@ public interface GameServices {
     ElementRegistry elements();
     ItemCatalog items();
     PowerCommandRegistry powerCommands();
+    SocketRegistry sockets();
     ItemGeneratorRegistry itemGenerators();
     ItemTypeRegistry itemTypes();
     ItemTierRegistry itemTiers();
