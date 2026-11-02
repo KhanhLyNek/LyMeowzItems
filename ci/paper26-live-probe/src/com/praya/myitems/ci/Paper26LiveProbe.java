@@ -418,6 +418,69 @@ public final class Paper26LiveProbe extends JavaPlugin {
         getLogger().info("PASS: canonical Effect + Power Command registries and legacy YAML");
     }
 
+    /** Snapshot-only socket API regression: no inventory, crafting or RNG mutation. */
+    private void verifyCanonicalSocketRegistry() {
+        final MyItems plugin = (MyItems) Bukkit.getPluginManager().getPlugin("LyMeowzItem");
+        final com.praya.myitems.manager.game.SocketManager original =
+                plugin.getGameManager().getSocketManager();
+        final com.lymeowz.item.manager.SocketRegistry sockets =
+                com.lymeowz.item.manager.GameAccess.of(
+                        (com.lymeowz.item.LyMeowzItem) plugin).sockets();
+        check(sockets == original && sockets.ids().containsAll(original.getSocketIDs()),
+                "canonical SocketRegistry uses original live manager and IDs");
+        check(sockets.find("not-configured-socket-probe") == null,
+                "unknown socket ID retains old null behavior");
+        try {
+            sockets.ids().clear();
+            throw new AssertionError("canonical socket ID view must be immutable");
+        } catch (UnsupportedOperationException expected) { }
+        for (final String id : sockets.ids()) {
+            final com.lymeowz.item.socket.SocketDefinition view =
+                    sockets.find(id.toUpperCase(java.util.Locale.ROOT));
+            final api.praya.myitems.builder.socket.SocketGemsTree legacy =
+                    original.getSocketTree(id);
+            check(view == legacy && view.id().equals(legacy.getGems())
+                            && view.maxGrade() == legacy.getMaxGrade()
+                            && view.availableGrades().containsAll(legacy.getMapSocket().keySet()),
+                    "socket family preserves original live builder and configured grades");
+            try {
+                view.availableGrades().clear();
+                throw new AssertionError("canonical socket grades must be immutable");
+            } catch (UnsupportedOperationException expected) { }
+            for (final int grade : view.availableGrades()) {
+                final com.lymeowz.item.socket.SocketGemDefinition gem = view.findGrade(grade);
+                final api.praya.myitems.builder.socket.SocketGems originalGem =
+                        legacy.getSocketBuild(grade);
+                check(gem == originalGem && gem.gemGrade() == grade
+                                && gem.socketId().equals(originalGem.getGems())
+                                && gem.successRate() == originalGem.getSuccessRate()
+                                && gem.loreKey().equals(originalGem.getKeyLore()),
+                        "gem read-only API retains original chance/grade/lore metadata");
+                final ItemStack first = gem.itemSnapshot();
+                final ItemStack second = gem.itemSnapshot();
+                check(first == null || (first != second && first.isSimilar(second)),
+                        "canonical gem ItemStack views are separate clones");
+            }
+        }
+
+        final java.util.HashMap<Integer, api.praya.myitems.builder.socket.SocketGems> mutable =
+                new java.util.HashMap<>();
+        final api.praya.myitems.builder.socket.SocketGemsTree detached =
+                new api.praya.myitems.builder.socket.SocketGemsTree("TestSocket", 4,
+                        core.praya.agarthalib.enums.main.SlotType.UNIVERSAL, mutable);
+        final java.util.Collection<Integer> snapshot = detached.availableGrades();
+        mutable.put(2, null);
+        check(snapshot.isEmpty() && detached.availableGrades().contains(2),
+                "canonical socket grades are detached from live mutable legacy storage");
+        try {
+            snapshot.clear();
+            throw new AssertionError("empty socket grade snapshot must still be immutable");
+        } catch (UnsupportedOperationException expected) { }
+        check(detached.findGrade(99) == null && "UNIVERSAL".equals(detached.applicableItemType()),
+                "missing socket grade and applicable item type preserve original values");
+        getLogger().info("PASS: canonical socket/gem live builders and immutable snapshots");
+    }
+
     /** Validate all 25 shipped class singletons against the running plugin,
      * configured damage scales, and exact existing lore encode/decode path.
      * Do not fire destructive combat in this startup smoke fixture.
@@ -1353,6 +1416,7 @@ public final class Paper26LiveProbe extends JavaPlugin {
             getLogger().info("PASS: live legacy NBT read-only fallback and PDC precedence");
             verifyWeaponAbilities();
             verifyCanonicalEffectAndPowerCommands();
+            verifyCanonicalSocketRegistry();
             verifyElementPotionViews();
             verifyItemTypesAndTiers();
             verifyItemGenerators();
