@@ -6,7 +6,7 @@ package api.praya.myitems.builder.item;
 
 import java.util.List;
 
-public class ItemSetBonus
+public class ItemSetBonus implements com.lymeowz.item.itemset.ItemSetBonusDefinition
 {
     private final int amountID;
     private final List<String> description;
@@ -26,6 +26,17 @@ public class ItemSetBonus
         return this.description;
     }
     
+    @Override
+    public final int requiredPieces() {
+        return getAmountID();
+    }
+
+    @Override
+    public final List<String> descriptionSnapshot() {
+        return this.description == null ? java.util.List.of() :
+                java.util.Collections.unmodifiableList(new java.util.ArrayList<>(this.description));
+    }
+
     public final ItemSetBonusEffect getEffect() {
         return this.effect;
     }

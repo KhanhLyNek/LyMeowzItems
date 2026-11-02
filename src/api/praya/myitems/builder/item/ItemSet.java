@@ -25,7 +25,7 @@ import java.util.Iterator;
 import java.util.Collection;
 import java.util.HashMap;
 
-public class ItemSet
+public class ItemSet implements com.lymeowz.item.itemset.ItemSetDefinition
 {
     private final String id;
     private final String name;
@@ -86,6 +86,36 @@ public class ItemSet
         return this.getItemSetComponent(componentID) != null;
     }
     
+    @Override
+    public final String id() {
+        return getID();
+    }
+
+    @Override
+    public final String name() {
+        return getName();
+    }
+
+    @Override
+    public final Collection<Integer> bonusAmounts() {
+        return Collections.unmodifiableList(new ArrayList<>(getBonusAmountIDs()));
+    }
+
+    @Override
+    public final Collection<String> componentIds() {
+        return Collections.unmodifiableList(new ArrayList<>(getComponentIDs()));
+    }
+
+    @Override
+    public final com.lymeowz.item.itemset.ItemSetBonusDefinition findBonus(final int amount) {
+        return getItemSetBonus(amount);
+    }
+
+    @Override
+    public final com.lymeowz.item.itemset.ItemSetComponentDefinition findComponent(final String id) {
+        return getItemSetComponent(id);
+    }
+
     public final int getTotalComponent() {
         return this.mapComponent.size();
     }

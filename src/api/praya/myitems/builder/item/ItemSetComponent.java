@@ -11,7 +11,7 @@ import com.praya.myitems.MyItems;
 import core.praya.agarthalib.enums.main.Slot;
 import java.util.Set;
 
-public class ItemSetComponent
+public class ItemSetComponent implements com.lymeowz.item.itemset.ItemSetComponentDefinition
 {
     private final String itemSetID;
     private final String id;
@@ -47,6 +47,34 @@ public class ItemSetComponent
         return this.slots;
     }
     
+    @Override
+    public final String id() {
+        return getID();
+    }
+
+    @Override
+    public final String setId() {
+        return getItemSetID();
+    }
+
+    @Override
+    public final String loreKey() {
+        return getKeyLore();
+    }
+
+    @Override
+    public final java.util.Collection<String> slotNames() {
+        final java.util.List<String> result = new java.util.ArrayList<>();
+        if (this.slots != null) {
+            for (final Slot slot : this.slots) {
+                if (slot != null) {
+                    result.add(slot.name());
+                }
+            }
+        }
+        return java.util.Collections.unmodifiableList(result);
+    }
+
     public final boolean isMatchSlot(final Slot slot) {
         return slot != null && this.getSlots().contains(slot);
     }
