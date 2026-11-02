@@ -308,6 +308,116 @@ public final class Paper26LiveProbe extends JavaPlugin {
         getLogger().info("PASS: element registry and immutable potion metadata snapshots");
     }
 
+    /** Exercise both canonical registries using original live manager instances. */
+    private void verifyCanonicalEffectAndPowerCommands() {
+        final com.lymeowz.lib.LyMeowzLib lib =
+                (com.lymeowz.lib.LyMeowzLib) Bukkit.getPluginManager().getPlugin("LyMeowzLib");
+        final com.lymeowz.lib.manager.GameServices libServices =
+                com.lymeowz.lib.manager.GameAccess.of(lib);
+        check(libServices != null, "canonical LyMeowzLib game services available");
+        final com.praya.agarthalib.manager.game.EffectTypeManager oldEffects =
+                lib.getGameManager().getEffectTypeManager();
+        final com.lymeowz.lib.effect.EffectRegistry effects = libServices.effects();
+        check(effects == oldEffects && effects.ids().containsAll(oldEffects.getEffectTypeIds()),
+                "new effect registry is the original live legacy manager");
+        check(effects.find("not-registered-effect-probe") == null,
+                "missing effect lookup remains null");
+        try {
+            effects.ids().clear();
+            throw new AssertionError("canonical effect IDs must be immutable");
+        } catch (UnsupportedOperationException expected) { }
+        for (final String id : effects.ids()) {
+            final com.lymeowz.lib.effect.EffectDefinition canonical =
+                    effects.find(id.toUpperCase(java.util.Locale.ROOT));
+            final com.praya.agarthalib.effect.EffectType legacy = oldEffects.getEffectType(id);
+            check(canonical == legacy && id.equals(canonical.id())
+                            && canonical.pluginName().equals(legacy.getPlugin().getName()),
+                    "effect metadata/lookup preserves live object identity and owner");
+        }
+        final com.praya.agarthalib.effect.EffectType detachedEffect =
+                new com.praya.agarthalib.effect.EffectType(lib, "Standalone-Effect-Probe") {
+                    @Override public String getName(final Player player) { return "Probe"; }
+                    @Override public List<String> getDescription(final Player player) {
+                        return List.of();
+                    }
+                };
+        check(detachedEffect.id().equals("Standalone-Effect-Probe")
+                        && detachedEffect.pluginName().equals("LyMeowzLib")
+                        && effects.find(detachedEffect.id()) == null,
+                "unregistered effect metadata does not mutate the live registry");
+
+        final MyItems itemPlugin = (MyItems) Bukkit.getPluginManager().getPlugin("LyMeowzItem");
+        final com.praya.myitems.manager.game.PowerCommandManager legacyCommands =
+                itemPlugin.getGameManager().getPowerManager().getPowerCommandManager();
+        final com.lymeowz.item.manager.PowerCommandRegistry commandRegistry =
+                com.lymeowz.item.manager.GameAccess.of(
+                        (com.lymeowz.item.LyMeowzItem) itemPlugin).powerCommands();
+        check(commandRegistry == legacyCommands
+                        && commandRegistry.ids().containsAll(legacyCommands.getPowerCommandIDs()),
+                "Power Command canonical registry is the original live manager");
+        check(commandRegistry.find("missing-power-command-probe") == null,
+                "missing Power Command preserves legacy lookup");
+        try {
+            commandRegistry.ids().clear();
+            throw new AssertionError("power command IDs must be immutable");
+        } catch (UnsupportedOperationException expected) { }
+        for (final String id : commandRegistry.ids()) {
+            final com.lymeowz.item.power.PowerCommandDefinition view =
+                    commandRegistry.find(id.toUpperCase(java.util.Locale.ROOT));
+            final api.praya.myitems.builder.power.PowerCommandProperties original =
+                    legacyCommands.getPowerCommandProperties(id);
+            check(view == original && view.keyLore().equals(original.getKeyLore())
+                            && view.consumesItem() == original.isConsume()
+                            && view.opCommands().equals(original.getCommandOP())
+                            && view.consoleCommands().equals(original.getCommandConsole()),
+                    "Power Command metadata preserves original execution definition");
+            try {
+                view.opCommands().clear();
+                throw new AssertionError("OP commands must be immutable snapshots");
+            } catch (UnsupportedOperationException expected) { }
+            try {
+                view.consoleCommands().clear();
+                throw new AssertionError("console commands must be immutable snapshots");
+            } catch (UnsupportedOperationException expected) { }
+        }
+
+        final org.bukkit.configuration.file.YamlConfiguration yaml =
+                new org.bukkit.configuration.file.YamlConfiguration();
+        yaml.set("MiXeD_Command.KeyLore", "&aLegacy power");
+        yaml.set("MiXeD_Command.Consume", true);
+        yaml.set("MiXeD_Command.Command.OP", List.of("heal {player}", "fly {player}"));
+        yaml.set("MiXeD_Command.Command.Console", "give {player} diamond");
+        yaml.set("String_Command.KeyLore", "Simple");
+        yaml.set("String_Command.Command", "say old command");
+        yaml.set("List_Command.KeyLore", "List");
+        yaml.set("List_Command.Command", List.of("say first", "say second"));
+        yaml.set("Ignored_Scalar", "not a power command");
+        yaml.set("Ignored_NoCommands.KeyLore", "ignored");
+        final java.util.Map<String, api.praya.myitems.builder.power.PowerCommandProperties> parsed =
+                com.lymeowz.item.config.PowerCommandDefinitions.read(yaml);
+        check(parsed.size() == 3 && parsed.containsKey("MiXeD_Command"),
+                "new Power Command reader keeps case-sensitive IDs and ignores invalid YAML");
+        final api.praya.myitems.builder.power.PowerCommandProperties nested =
+                parsed.get("MiXeD_Command");
+        check(nested.isConsume() && nested.getCommandOP().equals(List.of("heal {player}", "fly {player}"))
+                        && nested.getCommandConsole().equals(List.of("give {player} diamond")),
+                "nested Power Command OP and Console formats retain order and consumption");
+        check(parsed.get("String_Command").getCommandOP().equals(List.of("say old command"))
+                        && parsed.get("List_Command").getCommandOP().equals(
+                                List.of("say first", "say second")),
+                "legacy flat String and List Command formats still load");
+        final java.util.ArrayList<String> mutable = new java.util.ArrayList<>(List.of("old"));
+        final api.praya.myitems.builder.power.PowerCommandProperties detached =
+                new api.praya.myitems.builder.power.PowerCommandProperties(
+                        "Probe", false, mutable, new java.util.ArrayList<>());
+        final List<String> oldSnapshot = detached.opCommands();
+        mutable.add("new");
+        check(oldSnapshot.equals(List.of("old"))
+                        && detached.opCommands().equals(List.of("old", "new")),
+                "canonical Power Command command lists are detached immutable snapshots");
+        getLogger().info("PASS: canonical Effect + Power Command registries and legacy YAML");
+    }
+
     /** Validate all 25 shipped class singletons against the running plugin,
      * configured damage scales, and exact existing lore encode/decode path.
      * Do not fire destructive combat in this startup smoke fixture.
@@ -1242,6 +1352,7 @@ public final class Paper26LiveProbe extends JavaPlugin {
                     "marked combat stat survives legacy NBT item roundtrip");
             getLogger().info("PASS: live legacy NBT read-only fallback and PDC precedence");
             verifyWeaponAbilities();
+            verifyCanonicalEffectAndPowerCommands();
             verifyElementPotionViews();
             verifyItemTypesAndTiers();
             verifyItemGenerators();
