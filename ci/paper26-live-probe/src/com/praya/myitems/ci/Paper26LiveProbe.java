@@ -478,6 +478,45 @@ public final class Paper26LiveProbe extends JavaPlugin {
         } catch (UnsupportedOperationException expected) { }
         check(detached.findGrade(99) == null && "UNIVERSAL".equals(detached.applicableItemType()),
                 "missing socket grade and applicable item type preserve original values");
+        // Exercise the canonical YAML reader against live Paper materials.
+        // No configured item, player inventory, or persistent data is modified.
+        final org.bukkit.configuration.file.YamlConfiguration socketYaml =
+                new org.bukkit.configuration.file.YamlConfiguration();
+        socketYaml.set("MiXeD_Socket.KeyLore", "&eDamage: {additional_damage}");
+        socketYaml.set("MiXeD_Socket.Display_Name", "&aGem {grade}");
+        socketYaml.set("MiXeD_Socket.Material", "Emerald");
+        socketYaml.set("MiXeD_Socket.Type_Item", "Universal");
+        socketYaml.set("MiXeD_Socket.Max_Grade", 2);
+        socketYaml.set("MiXeD_Socket.Base_Success_Rate", 85.0d);
+        socketYaml.set("MiXeD_Socket.Scale_Success_Rate", -15.0d);
+        socketYaml.set("MiXeD_Socket.Effect.Bonus_Base_Additional_Damage", 2.5d);
+        socketYaml.set("MiXeD_Socket.Effect.Bonus_Scale_Additional_Damage", 1.5d);
+        socketYaml.set("Ignored_Scalar", "not a socket section");
+        final java.util.Map<String, api.praya.myitems.builder.socket.SocketGemsTree> decoded =
+                com.lymeowz.item.config.SocketDefinitions.read(socketYaml,
+                        com.praya.myitems.config.plugin.MainConfig.getInstance());
+        check(decoded.size() == 1 && decoded.containsKey("MiXeD_Socket"),
+                "canonical socket reader keeps original case-sensitive YAML IDs");
+        final api.praya.myitems.builder.socket.SocketGemsTree parsed = decoded.get("MiXeD_Socket");
+        check(parsed.getMaxGrade() == 2 && parsed.isGemsAvailable(1)
+                        && parsed.isGemsAvailable(2),
+                "socket YAML retains original grade generation");
+        final api.praya.myitems.builder.socket.SocketGems second = parsed.getSocketBuild(2);
+        check(second.getSuccessRate() == 70.0d
+                        && second.getSocketProperties().getAdditionalDamage() == 4.0d,
+                "socket YAML retains grade scaling for success rate and bonus damage");
+        check(second.getItem() != null && second.getItem() != second.getItem(),
+                "canonical socket YAML constructs the original clone-safe gem item");
+        final org.bukkit.configuration.file.YamlConfiguration badYaml =
+                new org.bukkit.configuration.file.YamlConfiguration();
+        badYaml.set("Broken_Effect.KeyLore", "Broken safe example");
+        badYaml.set("Broken_Effect.Display_Name", "Safe");
+        badYaml.set("Broken_Effect.Material", "Emerald");
+        badYaml.set("Broken_Effect.Effects", "not a configuration section");
+        check(com.lymeowz.item.config.SocketDefinitions.read(badYaml,
+                        com.praya.myitems.config.plugin.MainConfig.getInstance())
+                        .containsKey("Broken_Effect"),
+                "malformed effect YAML section does not crash gem loading");
         getLogger().info("PASS: canonical socket/gem live builders and immutable snapshots");
     }
 
