@@ -18,6 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
+      - name: Enforce complete LyMeowz Java namespaces
+        run: python3 ci/check_full_namespace.py
       - name: Checkout MyItems
         uses: actions/checkout@v4
       - name: Guard original YAML and gameplay logic
