@@ -1,0 +1,35 @@
+name: Deep postmigration source audit
+on:
+  push:
+    branches: [master]
+    paths:
+      - ci/deep_postmigration_audit.py
+      - .github/workflows/deep-postmigration-audit.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout LyMeowzItem with full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Checkout LyMeowzLib with full history
+        uses: actions/checkout@v4
+        with:
+          repository: KhanhLyNek/AgarthaLib
+          ref: master
+          fetch-depth: 0
+          path: agarthalib
+      - name: Check all Java files and YAML values against pre-migration commits
+        run: python3 ci/deep_postmigration_audit.py
+      - name: Upload detailed findings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deep-postmigration-audit
+          path: build/reports/deep-postmigration-audit.json
+          if-no-files-found: warn
