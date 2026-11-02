@@ -56,14 +56,20 @@ def scan(repo, root, base, namespace):
             if not f.startswith("src/" + namespace.replace(".", "/") + "/") or match is None or match.group(1) != expected:
                 paths.append(f)
     resource_delta = []
+    stale_resource_refs = []
     for p in previous:
         if p.startswith("resources/") and p.endswith((".yml", ".yaml", ".json", ".properties")):
             source = root / p
             old = git(root, "show", base + ":" + p)
             if not source.exists():
                 resource_delta.append([p, "MISSING"])
-            elif source.read_text("utf-8") != old:
-                resource_delta.append([p, "NAMESPACE_ONLY" if convert(old) == source.read_text("utf-8") else "NONMECHANICAL"])
+            else:
+                current = source.read_text("utf-8")
+                for legacy, _ in REMAP:
+                    if legacy in current:
+                        stale_resource_refs.append(p + ": " + legacy)
+                if current != old:
+                    resource_delta.append([p, "NAMESPACE_ONLY" if convert(old) == current else "NONMECHANICAL"])
     gradle = (root / "build.gradle.kts").read_text("utf-8")
     plugin = (root / "resources/plugin.yml").read_text("utf-8")
     metadata = []
@@ -75,7 +81,8 @@ def scan(repo, root, base, namespace):
         metadata.append("cross-library Maven dependency")
     return dict(repo=repo, before=len(past), after=len(now), missing=missing,
                 extra=extras, nonmechanical_java=modified, stale_refs=stale,
-                package_mismatch=paths, resources_changed=resource_delta, metadata=metadata)
+                package_mismatch=paths, resources_changed=resource_delta,
+                stale_resource_class_refs=stale_resource_refs, metadata=metadata)
 
 reports = [scan(*r) for r in REPOS]
 for r in reports:
@@ -90,7 +97,8 @@ for r in reports:
 output = ROOT / "build/reports/deep-postmigration-audit.json"
 output.parent.mkdir(parents=True, exist_ok=True)
 output.write_text(json.dumps(reports, indent=2, ensure_ascii=False) + "\n", "utf-8")
-critical = ["missing", "extra", "nonmechanical_java", "stale_refs", "package_mismatch", "metadata"]
+critical = ["missing", "extra", "nonmechanical_java", "stale_refs",
+            "stale_resource_class_refs", "package_mismatch", "metadata"]
 failure = any(r[k] for r in reports for k in critical)
 print("DEEP MIGRATION AUDIT:", "FAIL" if failure else "PASS")
 raise SystemExit(1 if failure else 0)
