@@ -13,6 +13,7 @@ public interface GameServices {
     Collection<String> weaponPropertyIds();
     ElementRegistry elements();
     ItemCatalog items();
+    PowerCommandRegistry powerCommands();
     ItemGeneratorRegistry itemGenerators();
     ItemTypeRegistry itemTypes();
     ItemTierRegistry itemTiers();

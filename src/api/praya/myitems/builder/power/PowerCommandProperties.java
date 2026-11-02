@@ -6,7 +6,7 @@ package api.praya.myitems.builder.power;
 
 import java.util.List;
 
-public class PowerCommandProperties
+public class PowerCommandProperties implements com.lymeowz.item.power.PowerCommandDefinition
 {
     private final String keyLore;
     private final boolean consume;
@@ -36,6 +36,28 @@ public class PowerCommandProperties
         return this.commandConsole;
     }
     
+    @Override
+    public final String keyLore() {
+        return getKeyLore();
+    }
+
+    @Override
+    public final boolean consumesItem() {
+        return isConsume();
+    }
+
+    @Override
+    public final List<String> opCommands() {
+        return this.commandOP == null ? java.util.List.of() :
+                java.util.Collections.unmodifiableList(new java.util.ArrayList<>(this.commandOP));
+    }
+
+    @Override
+    public final List<String> consoleCommands() {
+        return this.commandConsole == null ? java.util.List.of() :
+                java.util.Collections.unmodifiableList(new java.util.ArrayList<>(this.commandConsole));
+    }
+
     @Deprecated
     public final List<String> getCommands() {
         return this.commandOP;

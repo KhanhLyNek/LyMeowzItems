@@ -18,7 +18,7 @@ import com.praya.myitems.MyItems;
 import com.praya.myitems.config.game.PowerCommandConfig;
 import com.praya.myitems.builder.handler.HandlerManager;
 
-public class PowerCommandManager extends HandlerManager
+public class PowerCommandManager extends HandlerManager implements com.lymeowz.item.manager.PowerCommandRegistry
 {
     private final PowerCommandConfig powerCommandConfig;
     
@@ -43,6 +43,18 @@ public class PowerCommandManager extends HandlerManager
         return this.getPowerCommandConfig().getPowerCommandProperties(id);
     }
     
+    @Override
+    public final Collection<String> ids() {
+        return java.util.Collections.unmodifiableList(
+                new java.util.ArrayList<>(getPowerCommandIDs()));
+    }
+
+    @Override
+    public final com.lymeowz.item.power.PowerCommandDefinition find(final String id) {
+        // Original case-insensitive lookup, original live properties instance.
+        return getPowerCommandProperties(id);
+    }
+
     public final boolean isPowerCommandExists(final String id) {
         return this.getPowerCommandProperties(id) != null;
     }

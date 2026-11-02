@@ -65,72 +65,10 @@ public class PowerCommandConfig extends HandlerConfig
         if (!file.exists()) {
             FileUtil.saveResource((JavaPlugin)this.plugin, path);
         }
-        final FileConfiguration config = FileUtil.getFileConfiguration(file);
-        for (final String key : config.getKeys(false)) {
-            final ConfigurationSection mainDataSection = config.getConfigurationSection(key);
-            final List<String> commandOP = new ArrayList<String>();
-            final List<String> commandConsole = new ArrayList<String>();
-            String keyLore = null;
-            boolean consume = false;
-            for (final String mainData : mainDataSection.getKeys(false)) {
-                if (mainData.equalsIgnoreCase("KeyLore")) {
-                    keyLore = TextUtil.colorful(mainDataSection.getString(mainData));
-                }
-                else if (mainData.equalsIgnoreCase("Consume")) {
-                    consume = mainDataSection.getBoolean(mainData);
-                }
-                else {
-                    if (!mainData.equalsIgnoreCase("command")) {
-                        continue;
-                    }
-                    if (mainDataSection.isList(mainData)) {
-                        commandOP.addAll(mainDataSection.getStringList(mainData));
-                    }
-                    else if (mainDataSection.isString(mainData)) {
-                        commandOP.add(mainDataSection.getString(mainData));
-                    }
-                    else {
-                        if (!mainDataSection.isConfigurationSection(mainData)) {
-                            continue;
-                        }
-                        final ConfigurationSection commandDataSection = mainDataSection.getConfigurationSection(mainData);
-                        for (final String commandData : commandDataSection.getKeys(false)) {
-                            if (commandData.equalsIgnoreCase("OP")) {
-                                if (commandDataSection.isList(commandData)) {
-                                    commandOP.addAll(commandDataSection.getStringList(commandData));
-                                }
-                                else {
-                                    if (!commandDataSection.isString(commandData)) {
-                                        continue;
-                                    }
-                                    commandOP.add(commandDataSection.getString(commandData));
-                                }
-                            }
-                            else {
-                                if (!commandData.equalsIgnoreCase("Console")) {
-                                    continue;
-                                }
-                                if (commandDataSection.isList(commandData)) {
-                                    commandConsole.addAll(commandDataSection.getStringList(commandData));
-                                }
-                                else {
-                                    if (!commandDataSection.isString(commandData)) {
-                                        continue;
-                                    }
-                                    commandConsole.add(commandDataSection.getString(commandData));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            if (keyLore != null & (!commandOP.isEmpty() || !commandConsole.isEmpty())) {
-                final PowerCommandProperties powerCommandProperties = new PowerCommandProperties(keyLore, consume, commandOP, commandConsole);
-                this.mapPowerCommand.put(key, powerCommandProperties);
-            }
-        }
+        this.mapPowerCommand.putAll(com.lymeowz.item.config.PowerCommandDefinitions.read(
+                FileUtil.getFileConfiguration(file)));
     }
-    
+
     private final void moveOldFile() {
         final PluginManager pluginManager = this.plugin.getPluginManager();
         final DataManager dataManager = pluginManager.getDataManager();

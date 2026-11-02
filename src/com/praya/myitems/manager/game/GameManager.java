@@ -129,6 +129,11 @@ public class GameManager implements com.lymeowz.item.manager.GameServices
     }
 
     @Override
+    public final com.lymeowz.item.manager.PowerCommandRegistry powerCommands() {
+        return this.powerManager.getPowerCommandManager();
+    }
+
+    @Override
     public final com.lymeowz.item.manager.ItemCatalog items() {
         return this.itemManager;
     }
