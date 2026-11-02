@@ -570,6 +570,105 @@ public final class Paper26LiveProbe extends JavaPlugin {
         getLogger().info("PASS: original projectile registry and cloned LyMeowz metadata views");
     }
 
+    /** Validate migrated Item Set metadata and original bonus YAML grammar. */
+    private void verifyCanonicalItemSets() {
+        final MyItems plugin = (MyItems) Bukkit.getPluginManager().getPlugin("LyMeowzItem");
+        final com.praya.myitems.manager.game.ItemSetManager original =
+                plugin.getGameManager().getItemSetManager();
+        final com.lymeowz.item.manager.ItemSetRegistry sets =
+                com.lymeowz.item.manager.GameAccess.of(
+                        (com.lymeowz.item.LyMeowzItem) plugin).itemSets();
+        check(sets == original && sets.ids().containsAll(original.getItemSetIDs()),
+                "canonical Item Set registry is the original manager");
+        check(sets.find("no-such-item-set-probe") == null,
+                "unknown set ID still resolves to null");
+        try {
+            sets.ids().clear();
+            throw new AssertionError("Item Set ID snapshot must be immutable");
+        } catch (UnsupportedOperationException expected) { }
+        for (final String id : sets.ids()) {
+            final com.lymeowz.item.itemset.ItemSetDefinition view =
+                    sets.find(id.toUpperCase(java.util.Locale.ROOT));
+            final api.praya.myitems.builder.item.ItemSet old = original.getItemSet(id);
+            check(view == old && view.id().equals(old.getID())
+                            && view.name().equals(old.getName())
+                            && view.componentIds().containsAll(old.getComponentIDs())
+                            && view.bonusAmounts().containsAll(old.getBonusAmountIDs()),
+                    "canonical Item Set metadata preserves original case-insensitive lookup");
+            try {
+                view.componentIds().clear();
+                throw new AssertionError("Item Set component IDs must be immutable");
+            } catch (UnsupportedOperationException expected) { }
+            try {
+                view.bonusAmounts().clear();
+                throw new AssertionError("Item Set bonus thresholds must be immutable");
+            } catch (UnsupportedOperationException expected) { }
+            for (final int required : view.bonusAmounts()) {
+                final com.lymeowz.item.itemset.ItemSetBonusDefinition bonus = view.findBonus(required);
+                final api.praya.myitems.builder.item.ItemSetBonus legacy = old.getItemSetBonus(required);
+                check(bonus == legacy && bonus.requiredPieces() == required
+                                && bonus.descriptionSnapshot().equals(legacy.getDescription()),
+                        "Item Set threshold and description retain original builder");
+                try {
+                    bonus.descriptionSnapshot().clear();
+                    throw new AssertionError("Item Set descriptions must be immutable");
+                } catch (UnsupportedOperationException expected) { }
+            }
+            for (final String componentId : view.componentIds()) {
+                final com.lymeowz.item.itemset.ItemSetComponentDefinition component =
+                        view.findComponent(componentId.toUpperCase(java.util.Locale.ROOT));
+                final api.praya.myitems.builder.item.ItemSetComponent legacy =
+                        old.getItemSetComponent(componentId);
+                check(component == legacy && component.id().equals(componentId)
+                                && component.setId().equals(old.getID())
+                                && component.slotNames().size() == legacy.getSlots().size(),
+                        "Item Set component slot snapshot matches old slot mapping");
+                try {
+                    component.slotNames().clear();
+                    throw new AssertionError("Item Set slot names must be immutable");
+                } catch (UnsupportedOperationException expected) { }
+            }
+        }
+
+        final org.bukkit.configuration.file.YamlConfiguration yaml =
+                new org.bukkit.configuration.file.YamlConfiguration();
+        yaml.set("MiXeD_Set.Name", "Mixed Item Set");
+        yaml.set("MiXeD_Set.Bonus.2.Description", List.of("&aBonus damage", "Second line"));
+        yaml.set("MiXeD_Set.Bonus.2.Effect.Stats.Additional_Damage", 3.75d);
+        yaml.set("MiXeD_Set.Component.Sword.KeyLore", "&aMixed Sword");
+        yaml.set("MiXeD_Set.Component.Sword.Display_Name", "Mixed Sword");
+        yaml.set("MiXeD_Set.Component.Sword.Material", "IRON_SWORD");
+        yaml.set("MiXeD_Set.Component.Sword.Slots", List.of("MainHand"));
+        yaml.set("MalformedRoot", "invalid scalar");
+        final java.util.Map<String, api.praya.myitems.builder.item.ItemSet> parsed =
+                com.lymeowz.item.config.ItemSetDefinitions.read(yaml);
+        check(parsed.size() == 1 && parsed.containsKey("MiXeD_Set"),
+                "Item Set parser retains IDs and skips scalar root keys");
+        final api.praya.myitems.builder.item.ItemSet built = parsed.get("MiXeD_Set");
+        final api.praya.myitems.builder.item.ItemSetBonus builtBonus = built.getItemSetBonus(2);
+        final api.praya.myitems.builder.item.ItemSetComponent builtComponent =
+                built.getItemSetComponent("mixed_set_sword");
+        check(builtBonus != null && builtBonus.getAmountID() == 2
+                        && builtBonus.getEffect().getEffectStats().getAdditionalDamage() == 3.75d,
+                "Item Set bonus threshold and stat formula preserve old YAML values");
+        check(builtComponent != null && builtComponent.getComponentItem() != null
+                        && builtComponent.getComponentItem().getMaterial() == Material.IRON_SWORD
+                        && builtComponent.slotNames().contains("MAINHAND"),
+                "Item Set YAML retains component naming and equipment slots");
+        final org.bukkit.configuration.file.YamlConfiguration malformed =
+                new org.bukkit.configuration.file.YamlConfiguration();
+        malformed.set("Broken_Bonus.Bonus", "unexpected scalar");
+        malformed.set("Broken_Component.Component", "unexpected scalar");
+        malformed.set("Broken_Effect.Bonus.2.Effect", "unexpected scalar");
+        malformed.set("Broken_Stats.Bonus.2.Effect.Stats", "unexpected scalar");
+        malformed.set("Broken_Abilities.Bonus.2.Effect.Ability_Weapon", "unexpected scalar");
+        malformed.set("Broken_Enchants.Component.Test.Material", "IRON_SWORD");
+        malformed.set("Broken_Enchants.Component.Test.Enchantment", "unexpected scalar");
+        check(com.lymeowz.item.config.ItemSetDefinitions.read(malformed).size() == 6,
+                "malformed Item Set sections are skipped without a server-start crash");
+        getLogger().info("PASS: canonical Item Set registry, YAML, bonuses and slots");
+    }
+
     /** Validate all 25 shipped class singletons against the running plugin,
      * configured damage scales, and exact existing lore encode/decode path.
      * Do not fire destructive combat in this startup smoke fixture.
@@ -1507,6 +1606,7 @@ public final class Paper26LiveProbe extends JavaPlugin {
             verifyCanonicalEffectAndPowerCommands();
             verifyCanonicalProjectileViews();
             verifyCanonicalSocketRegistry();
+            verifyCanonicalItemSets();
             verifyElementPotionViews();
             verifyItemTypesAndTiers();
             verifyItemGenerators();
