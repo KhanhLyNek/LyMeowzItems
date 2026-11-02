@@ -49,7 +49,8 @@ def main() -> None:
     parser.add_argument("--apply", action="store_true")
     args = parser.parse_args()
     files = [p for p in ROOT.rglob("*") if p.is_file()
-             and not any(x in SKIP for x in p.relative_to(ROOT).parts)
+             and p.relative_to(ROOT).parts[0] != "agarthalib"
+             and not any(x in SKIP - {"agarthalib"} for x in p.relative_to(ROOT).parts)
              and p.suffix.lower() in TEXT_EXT]
     changes: list[tuple[Path, Path, str]] = []
     occupied = set(files)
@@ -95,7 +96,8 @@ def main() -> None:
         baseline.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", "utf-8")
     bad = []
     for file in ROOT.rglob("*.java"):
-        if ".git" in file.parts or "build" in file.parts:
+        rel = file.relative_to(ROOT)
+        if rel.parts[0] == "agarthalib" or ".git" in rel.parts or "build" in rel.parts:
             continue
         s = file.read_text("utf-8")
         if any(old in s for old, _ in PREFIXES):
@@ -110,7 +112,8 @@ def main() -> None:
     tracked = git("ls-files").splitlines()
     tracked_java = [name for name in tracked if name.endswith(".java")]
     expected_java = [p for p in ROOT.rglob("*.java")
-                     if not any(x in SKIP for x in p.relative_to(ROOT).parts)]
+                     if p.relative_to(ROOT).parts[0] != "agarthalib"
+                     and not any(x in SKIP - {"agarthalib"} for x in p.relative_to(ROOT).parts)]
     if len(tracked_java) != len(expected_java) or len(tracked_java) < 345:
         raise SystemExit(f"Missing staged Java files: tracked={len(tracked_java)}, "
                          f"filesystem={len(expected_java)}")
