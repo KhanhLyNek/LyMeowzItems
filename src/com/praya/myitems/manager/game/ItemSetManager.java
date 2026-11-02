@@ -40,7 +40,7 @@ import com.praya.myitems.MyItems;
 import com.praya.myitems.config.game.ItemSetConfig;
 import com.praya.myitems.builder.handler.HandlerManager;
 
-public class ItemSetManager extends HandlerManager
+public class ItemSetManager extends HandlerManager implements com.lymeowz.item.manager.ItemSetRegistry
 {
     private final ItemSetConfig itemSetConfig;
     
@@ -65,6 +65,17 @@ public class ItemSetManager extends HandlerManager
         return this.getItemSetConfig().getItemSet(id);
     }
     
+    @Override
+    public final Collection<String> ids() {
+        return java.util.Collections.unmodifiableList(
+                new java.util.ArrayList<>(getItemSetIDs()));
+    }
+
+    @Override
+    public final com.lymeowz.item.itemset.ItemSetDefinition find(final String id) {
+        return getItemSet(id);
+    }
+
     public final boolean isExists(final String id) {
         return this.getItemSet(id) != null;
     }
