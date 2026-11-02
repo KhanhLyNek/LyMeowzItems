@@ -520,6 +520,56 @@ public final class Paper26LiveProbe extends JavaPlugin {
         getLogger().info("PASS: canonical socket/gem live builders and immutable snapshots");
     }
 
+    /** Confirm library projectile metadata exposes safe snapshots without spawning entities. */
+    private void verifyCanonicalProjectileViews() {
+        final com.lymeowz.lib.LyMeowzLib lib =
+                (com.lymeowz.lib.LyMeowzLib) Bukkit.getPluginManager().getPlugin("LyMeowzLib");
+        final com.lymeowz.lib.manager.GameServices services =
+                com.lymeowz.lib.manager.GameAccess.of(lib);
+        final com.praya.agarthalib.manager.game.ProjectilePropertiesManager legacy =
+                lib.getGameManager().getProjectilePropertiesManager();
+        final com.lymeowz.lib.projectile.ProjectileRegistry registry = services.projectiles();
+        check(registry == legacy && registry.ids().containsAll(legacy.getProjectileIds()),
+                "projectile registry shares the original live manager");
+        try {
+            registry.ids().clear();
+            throw new AssertionError("canonical projectile UUID snapshot is mutable");
+        } catch (UnsupportedOperationException expected) { }
+        check(registry.find(null) == null,
+                "canonical projectile lookup retains old null behavior");
+        final java.util.UUID fakeId = java.util.UUID.randomUUID();
+        final org.bukkit.entity.Projectile fake = (org.bukkit.entity.Projectile)
+                java.lang.reflect.Proxy.newProxyInstance(
+                        org.bukkit.entity.Projectile.class.getClassLoader(),
+                        new Class<?>[] { org.bukkit.entity.Projectile.class },
+                        (proxy, method, args) -> {
+                            if (method.getName().equals("getUniqueId")) return fakeId;
+                            throw new UnsupportedOperationException(method.getName());
+                        });
+        check(registry.find(fake) == null,
+                "canonical read-only lookup does not register a missing projectile");
+        final ItemStack original = new ItemStack(Material.DIAMOND_SWORD);
+        final com.praya.agarthalib.projectile.ProjectileProperties detached =
+                new com.praya.agarthalib.projectile.ProjectileProperties(fake, original);
+        final com.lymeowz.lib.projectile.ProjectileDefinition view = detached;
+        check(view.id().equals(fakeId) && view.mainItemSnapshot() != original
+                        && view.mainItemSnapshot().isSimilar(original)
+                        && view.deputyItemSnapshot() == null,
+                "projectile read-only view retains UUID and clones primary equipment");
+        final ItemStack snapshot = view.mainItemSnapshot();
+        original.setAmount(2);
+        check(snapshot.getAmount() == 1 && view.mainItemSnapshot().getAmount() == 2,
+                "earlier equipment snapshot is detached from legacy mutable storage");
+        final ItemStack deputy = new ItemStack(Material.SHIELD);
+        detached.setItemDeputy(deputy);
+        check(view.deputyItemSnapshot() != deputy
+                        && view.deputyItemSnapshot().isSimilar(deputy),
+                "deputy equipment also returns an independent copy");
+        check(registry.find(fake) == null && services.trackedProjectileCount() == registry.ids().size(),
+                "standalone probe leaves original projectile registry untouched");
+        getLogger().info("PASS: original projectile registry and cloned LyMeowz metadata views");
+    }
+
     /** Validate all 25 shipped class singletons against the running plugin,
      * configured damage scales, and exact existing lore encode/decode path.
      * Do not fire destructive combat in this startup smoke fixture.
@@ -1455,6 +1505,7 @@ public final class Paper26LiveProbe extends JavaPlugin {
             getLogger().info("PASS: live legacy NBT read-only fallback and PDC precedence");
             verifyWeaponAbilities();
             verifyCanonicalEffectAndPowerCommands();
+            verifyCanonicalProjectileViews();
             verifyCanonicalSocketRegistry();
             verifyElementPotionViews();
             verifyItemTypesAndTiers();
