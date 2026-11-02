@@ -1,8 +1,8 @@
 package com.lymeowz.item.command;
 
-import com.praya.myitems.modern.Paper26ExternalModels;
+import com.lymeowz.item.modern.Paper26ExternalModels;
 
-import com.praya.agarthalib.modern.Paper26ItemModels;
+import com.lymeowz.lib.modern.Paper26ItemModels;
 import org.bukkit.command.CommandSender;
 import com.lymeowz.item.permission.ItemPermissions;
 import org.bukkit.entity.Player;

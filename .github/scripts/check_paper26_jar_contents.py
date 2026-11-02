@@ -23,7 +23,7 @@ with ZipFile(candidates[0]) as z:
     assert "    - myitem\n" in manifest
     required = (
         "plugin.yml",
-        "com/praya/myitems/MyItems.class",
+        "com/lymeowz/item/MyItems.class",
         "com/lymeowz/item/LyMeowzItem.class",
         "com/lymeowz/item/command/CommandDefinitions.class",
         "com/lymeowz/item/config/DataDefinitions.class",
@@ -34,15 +34,15 @@ with ZipFile(candidates[0]) as z:
         "com/lymeowz/item/manager/ItemCatalog.class",
         "com/lymeowz/item/manager/GameServices.class",
         "com/lymeowz/item/manager/GameAccess.class",
-        "com/praya/myitems/config/plugin/DataConfig.class",
+        "com/lymeowz/item/config/plugin/DataConfig.class",
         "com/lymeowz/item/command/ModelCommand.class",
-        "com/praya/myitems/modern/Paper26ModelCommand.class",
+        "com/lymeowz/item/modern/Paper26ModelCommand.class",
         "com/lymeowz/item/stats/CombatMath.class",
         "com/lymeowz/item/stats/LoreStatsNumbers.class",
         "com/lymeowz/item/integration/MythicEventAccess.class",
-        "com/praya/myitems/modern/Paper26MythicEventAccess.class",
-        "com/praya/myitems/modern/Paper26LoreStatsNumbers.class",
-        "com/praya/myitems/modern/Paper26LoreStatsNumbers$Kind.class",
+        "com/lymeowz/item/modern/Paper26MythicEventAccess.class",
+        "com/lymeowz/item/modern/Paper26LoreStatsNumbers.class",
+        "com/lymeowz/item/modern/Paper26LoreStatsNumbers$Kind.class",
         "com/lymeowz/item/permission/ItemPermissions.class",
         "com/lymeowz/item/ability/WeaponAbility.class",
         "com/lymeowz/item/ability/WeaponBaseDamage.class",
@@ -54,13 +54,13 @@ with ZipFile(candidates[0]) as z:
         "com/lymeowz/item/manager/WeaponRegistry.class",
         "com/lymeowz/item/manager/WeaponLookup.class",
         "com/lymeowz/item/stats/ModernStatsFormulas.class",
-        "com/praya/myitems/builder/ability/weapon/AbilityWeaponConfuse.class",
-        "com/praya/myitems/builder/ability/weapon/AbilityWeaponFreeze.class",
-        "com/praya/myitems/listener/support/ListenerPlayerHealthMaxChange.class",
-        "com/praya/myitems/modern/Paper26MyItemsModernProviders.class",
-        "com/praya/myitems/modern/Paper26MyItemsMythicLibAdapter.class",
-        "com/praya/myitems/modern/Paper26MythicMobsEventBridge.class",
-        "com/praya/myitems/modern/Paper26MythicEventAccess.class",
+        "com/lymeowz/item/builder/ability/weapon/AbilityWeaponConfuse.class",
+        "com/lymeowz/item/builder/ability/weapon/AbilityWeaponFreeze.class",
+        "com/lymeowz/item/listener/support/ListenerPlayerHealthMaxChange.class",
+        "com/lymeowz/item/modern/Paper26MyItemsModernProviders.class",
+        "com/lymeowz/item/modern/Paper26MyItemsMythicLibAdapter.class",
+        "com/lymeowz/item/modern/Paper26MythicMobsEventBridge.class",
+        "com/lymeowz/item/modern/Paper26MythicEventAccess.class",
         "org/json/simple/JSONObject.class",
     )
     for name in required:
@@ -71,7 +71,7 @@ with ZipFile(candidates[0]) as z:
         "ListenerPlayerStaminaMaxChange", "ListenerPlayerHealthRegenChange",
     )
     for old in forbidden:
-        assert f"com/praya/myitems/listener/support/{old}.class" not in names, old
+        assert f"com/lymeowz/item/listener/support/{old}.class" not in names, old
     assert not any(n.startswith("net/minecraft/server/v1_") for n in names)
     print(f"PASS: {candidates[0].name}, {len(names)} entries; abilities kept, "
           "json-simple packaged, 6 obsolete optional event classes excluded")

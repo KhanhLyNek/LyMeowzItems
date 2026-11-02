@@ -1,5 +1,5 @@
 name: Paper26LiveProbe
 version: 1.0.0
-main: com.praya.myitems.ci.Paper26LiveProbe
+main: com.lymeowz.item.ci.Paper26LiveProbe
 api-version: '1.13'
 depend: [LyMeowzLib, LyMeowzItem, Essentials, ItemsAdder, Oraxen]

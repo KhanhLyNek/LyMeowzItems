@@ -105,7 +105,7 @@ def check() -> int:
         if key not in subcommands:
             problems.append(f"Removed legacy subcommand ID: {key}")
 
-    venom = (ROOT / "src/com/praya/myitems/builder/ability/weapon/AbilityWeaponVenomBlast.java").read_text(encoding="utf-8")
+    venom = (ROOT / "src/com/lymeowz/item/builder/ability/weapon/AbilityWeaponVenomBlast.java").read_text(encoding="utf-8")
     if '"Venom_Blast"' not in venom:
         problems.append("Venom_Blast source identifier disappeared")
 

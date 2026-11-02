@@ -1,6 +1,6 @@
 package com.lymeowz.item.ability;
 
-import com.praya.agarthalib.utility.MathUtil;
+import com.lymeowz.lib.utility.MathUtil;
 
 /**
  * Original weapon property arithmetic relocated without changing the clamping

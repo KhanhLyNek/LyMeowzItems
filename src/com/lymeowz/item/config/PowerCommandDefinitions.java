@@ -1,7 +1,7 @@
 package com.lymeowz.item.config;
 
-import api.praya.myitems.builder.power.PowerCommandProperties;
-import com.praya.agarthalib.utility.TextUtil;
+import com.lymeowz.item.api.builder.power.PowerCommandProperties;
+import com.lymeowz.lib.utility.TextUtil;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

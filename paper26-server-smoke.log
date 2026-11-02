@@ -1,0 +1,136 @@
+Downloading mojang_26.3.jar
+Applying patches
+Starting org.bukkit.craftbukkit.Main
+2026-11-02T19:45:27.983396114Z ServerMain WARN Advanced terminal features are not available in this environment
+[19:45:28 INFO]: [bootstrap] Running Java 25 (OpenJDK 64-Bit Server VM 25.0.5+8-LTS; Eclipse Adoptium Temurin-25.0.5+8) on Linux 7.0.0-1017-azure (amd64)
+[19:45:28 INFO]: [bootstrap] Loading Paper 26.3-237-main@7e88a0d (2026-11-01T19:08:12Z) for Minecraft 26.3
+[19:45:28 INFO]: [PluginInitializerManager] Initializing plugins...
+[19:45:28 INFO]: [PluginInitializerManager] Initialized 6 plugins
+[19:45:28 INFO]: [PluginInitializerManager] Bukkit plugins (6):
+ - Essentials (2.22.0-ci-interface-fixture), ItemsAdder (0.0.0-ci-fixture), LyMeowzItem (6.4.6), LyMeowzLib (2.17.2), Oraxen (0.0.0-ci-fixture), Paper26LiveProbe (1.0.0)
+[19:45:30 INFO]: [ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry] Initialising converters for DataConverter...
+[19:45:30 INFO]: [com.destroystokyo.paper.profile.PaperServicesDiscoveryService] Environment: Environment[discoveryUrl=https://discovery.minecraftservices.com/minecraft/client, name=PROD]
+[19:45:31 INFO]: [ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry] Finished initialising converters for DataConverter in 367.0ms
+[19:45:31 INFO]: Found new data pack paper, loading it automatically
+[19:45:31 INFO]: No existing world data, creating new world
+[19:45:32 INFO]: Loaded 1866 advancements
+[19:45:32 INFO]: Starting minecraft server version 26.3
+[19:45:32 INFO]: Loading properties
+[19:45:32 INFO]: This server is running Paper version 26.3-237-main@7e88a0d (2026-11-01T19:08:12Z) (Implementing API version 26.3.build.237-stable)
+[19:45:32 INFO]: [spark] This server bundles the spark profiler. For more information please visit https://docs.papermc.io/paper/profiling
+[19:45:33 INFO]: Server Ping Player Sample Count: 12
+[19:45:33 INFO]: Using 4 threads for Netty based IO
+[19:45:33 INFO]: [ca.spottedleaf.moonrise.common.util.FMA] FMA supported: true for Linux platform with feature flag: flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl xtopology tsc_reliable nonstop_tsc cpuid extd_apicid aperfmperf tsc_known_freq pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt aes xsave avx f16c rdrand hypervisor lahf_lm cmp_legacy svm cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw topoext vmmcall fsgsbase bmi1 avx2 smep bmi2 erms invpcid avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves user_shstk avx_vnni avx512_bf16 clzero xsaveerptr rdpru arat npt nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold v_vmsave_vmload avx512vbmi umip avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid fsrm avx512_vp2intersect
+[19:45:33 INFO]: [MoonriseCommon] Paper is using 1 worker threads, 1 I/O threads
+[19:45:33 INFO]: Default game type: SURVIVAL
+[19:45:33 INFO]: Generating keypair
+[19:45:33 INFO]: Starting Minecraft server on 127.0.0.1:25581
+[19:45:33 INFO]: Paper: Using libdeflate (Linux x86_64) compression from Velocity.
+[19:45:33 INFO]: Paper: Using OpenSSL 3.x.x (Linux x86_64) cipher from Velocity.
+[19:45:33 INFO]: [ItemsAdder] Loading server plugin ItemsAdder v0.0.0-ci-fixture
+[19:45:33 INFO]: [LyMeowzLib] Loading server plugin LyMeowzLib v2.17.2
+[19:45:33 INFO]: [LyMeowzLib] Preserved 1 existing data file(s) from plugins/AgarthaLib to plugins/LyMeowzLib. The original folder was not changed.
+[19:45:33 INFO]: [Oraxen] Loading server plugin Oraxen v0.0.0-ci-fixture
+[19:45:33 INFO]: [LyMeowzItem] Loading server plugin LyMeowzItem v6.4.6
+[19:45:33 INFO]: [LyMeowzItem] Preserved 1 existing data file(s) from plugins/MyItems to plugins/LyMeowzItem. The original folder was not changed.
+[19:45:33 INFO]: [Essentials] Loading server plugin Essentials v2.22.0-ci-interface-fixture
+[19:45:33 INFO]: [Paper26LiveProbe] Loading server plugin Paper26LiveProbe v1.0.0
+[19:45:33 WARN]: **** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!
+[19:45:33 WARN]: The server will make no attempt to authenticate usernames. Beware.
+[19:45:33 WARN]: While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.
+[19:45:33 WARN]: To change this, set "online-mode" to "true" in the server.properties file.
+[19:45:33 INFO]: Preparing level "world"
+[19:45:33 INFO]: Selecting spawn point for level 'minecraft:overworld'...
+[19:45:36 INFO]: Selecting spawn point for level 'minecraft:the_nether'...
+[19:45:36 INFO]: Selecting spawn point for level 'minecraft:the_end'...
+[19:45:36 INFO]: Loading 0 persistent chunks for level 'minecraft:overworld'...
+[19:45:36 INFO]: Preparing spawn area: 100%
+[19:45:36 INFO]: Prepared spawn area in 2892 ms
+[19:45:36 INFO]: Loading 0 persistent chunks for level 'minecraft:the_nether'...
+[19:45:36 INFO]: Preparing spawn area: 100%
+[19:45:36 INFO]: Prepared spawn area in 594 ms
+[19:45:36 INFO]: Loading 0 persistent chunks for level 'minecraft:the_end'...
+[19:45:36 INFO]: Preparing spawn area: 100%
+[19:45:36 INFO]: Prepared spawn area in 126 ms
+[19:45:36 INFO]: Done preparing level "world" (3.129s)
+[19:45:36 INFO]: [ItemsAdder] Enabling ItemsAdder v0.0.0-ci-fixture
+[19:45:36 INFO]: [ItemsAdder] CI ItemsAdder public CustomStack fixture loaded
+[19:45:36 INFO]: [LyMeowzLib] Enabling LyMeowzLib v2.17.2
+[19:45:37 INFO]: [Oraxen] Enabling Oraxen v0.0.0-ci-fixture
+[19:45:37 INFO]: [Oraxen] CI Oraxen public OraxenItems fixture loaded
+[19:45:37 INFO]: [LyMeowzItem] Enabling LyMeowzItem v6.4.6
+[19:45:37 INFO]: [Essentials] Enabling Essentials v2.22.0-ci-interface-fixture
+[19:45:37 INFO]: [Essentials] CI fixture: public net.ess3.api.IWarps enabled
+[19:45:37 INFO]: [Paper26LiveProbe] Enabling Paper26LiveProbe v1.0.0
+[19:45:37 INFO]: [Paper26LiveProbe] PASS: LyMeowz plugin identities, command aliases and old data folders
+[19:45:37 INFO]: [Paper26LiveProbe] PASS: canonical item YAML decoder and legacy item IDs
+[19:45:38 INFO]: [Paper26LiveProbe] PASS: LyMeowz permission migration (old/new, independent, denied)
+[19:45:38 INFO]: [Paper26LiveProbe] PASS: live legacy NBT read-only fallback and PDC precedence
+[19:45:38 INFO]: [Paper26LiveProbe] PASS: 25/25 weapon ability classes registered, configured and lore-roundtripped
+[19:45:38 INFO]: [Paper26LiveProbe] PASS: new LyMeowz ability builder, registry and damage scaling APIs
+[19:45:38 INFO]: [Paper26LiveProbe] PASS: canonical Effect + Power Command registries and legacy YAML
+[19:45:38 INFO]: [Paper26LiveProbe] PASS: original projectile registry and cloned LyMeowz metadata views
+[19:45:38 INFO]: [Paper26LiveProbe] PASS: canonical socket/gem live builders and immutable snapshots
+[19:45:38 INFO]: [Paper26LiveProbe] PASS: canonical Item Set registry, YAML, bonuses and slots
+[19:45:38 INFO]: [Paper26LiveProbe] PASS: element registry and immutable potion metadata snapshots
+[19:45:38 INFO]: [Paper26LiveProbe] PASS: canonical type/tier YAML and original live builder registries
+[19:45:38 INFO]: [Paper26LiveProbe] PASS: legacy item generator YAML, live registry and missing-tier guard
+[19:45:38 INFO]: [Paper26LiveProbe] PASS: 3/3 real mob-target skill casts (Freeze, Roots, Curse)
+[19:45:38 INFO]: [Paper26LiveProbe] PASS: EssentialsX 2.22 IWarps contract on real Paper plugin classloaders
+[19:45:38 INFO]: [Paper26LiveProbe] PASS: ItemsAdder/Oraxen model-only bridges and ItemStack roundtrip
+[19:45:38 INFO]: [Paper26LiveProbe] PASS: MyItems HEX and legacy item-name/lore commands on real Paper 26.3
+[19:45:38 INFO]: [Paper26LiveProbe] PASS: Paper Stats item lore NBT and PvP/PvE branch contracts
+[19:45:38 INFO]: [Paper26LiveProbe] PASS: Paper live mob-vs-mob stats damage event
+[19:45:38 INFO]: [Paper26LiveProbe] PASS: Paper HIGH-priority protection cancellation interoperability
+[19:45:38 INFO]: [spark] Starting background profiler...
+[19:45:39 INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:overworld
+[19:45:39 INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:the_nether
+[19:45:39 INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:the_end
+[19:45:39 INFO]: Running delayed init tasks
+[19:45:39 INFO]: Done (11.831s)! For help, type "help"
+[19:45:39 INFO]: *************************************************************************************
+[19:45:39 INFO]: This is the first time you're starting this server.
+[19:45:39 INFO]: It's recommended you read our 'Getting Started' documentation for guidance.
+[19:45:39 INFO]: View this and more helpful information here: https://docs.papermc.io/paper/next-steps
+[19:45:39 INFO]: *************************************************************************************
+[19:45:39 INFO]: LyMeowzItem version 6.4.6
+Website: https://www.spigotmc.org/resources/authors/70791/
+Author: Praya Amadiga Pitasa
+[19:45:40 INFO]: LyMeowzLib version 2.17.2
+Website: https://www.spigotmc.org/resources/authors/70791
+Author: Praya Amadiga Pitasa
+[19:45:41 INFO]: System chat: Stopping the server
+[19:45:41 INFO]: Stopping server
+[19:45:41 INFO]: [Paper26LiveProbe] Disabling Paper26LiveProbe v1.0.0
+[19:45:41 INFO]: [Essentials] Disabling Essentials v2.22.0-ci-interface-fixture
+[19:45:41 INFO]: [LyMeowzItem] Disabling LyMeowzItem v6.4.6
+[19:45:41 INFO]: [Oraxen] Disabling Oraxen v0.0.0-ci-fixture
+[19:45:41 INFO]: [LyMeowzLib] Disabling LyMeowzLib v2.17.2
+[19:45:41 INFO]: [ItemsAdder] Disabling ItemsAdder v0.0.0-ci-fixture
+[19:45:41 INFO]: Saving players
+[19:45:41 INFO]: Saving worlds
+[19:45:41 INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:overworld
+[19:45:41 INFO]: [ChunkHolderManager] Waiting 60s for chunk system to halt for world 'minecraft:overworld'
+[19:45:41 INFO]: [ChunkHolderManager] Halted chunk system for world 'minecraft:overworld'
+[19:45:41 INFO]: [ChunkHolderManager] Saving all chunkholders for world 'minecraft:overworld'
+[19:45:41 INFO]: [ChunkHolderManager] Saved 1 block chunks, 1 entity chunks, 0 poi chunks in world 'minecraft:overworld' in 0.01s
+[19:45:41 INFO]: [ChunkHolderManager] Waiting 60s for chunk I/O to halt for world 'minecraft:overworld'
+[19:45:41 INFO]: [ChunkHolderManager] Halted I/O scheduler for world 'minecraft:overworld'
+[19:45:41 INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:the_nether
+[19:45:41 INFO]: [ChunkHolderManager] Waiting 60s for chunk system to halt for world 'minecraft:the_nether'
+[19:45:41 INFO]: [ChunkHolderManager] Halted chunk system for world 'minecraft:the_nether'
+[19:45:41 INFO]: [ChunkHolderManager] Saving all chunkholders for world 'minecraft:the_nether'
+[19:45:41 INFO]: [ChunkHolderManager] Saved 0 block chunks, 0 entity chunks, 0 poi chunks in world 'minecraft:the_nether' in 0.01s
+[19:45:41 INFO]: [ChunkHolderManager] Waiting 60s for chunk I/O to halt for world 'minecraft:the_nether'
+[19:45:41 INFO]: [ChunkHolderManager] Halted I/O scheduler for world 'minecraft:the_nether'
+[19:45:41 INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:the_end
+[19:45:41 INFO]: [ChunkHolderManager] Waiting 60s for chunk system to halt for world 'minecraft:the_end'
+[19:45:41 INFO]: [ChunkHolderManager] Halted chunk system for world 'minecraft:the_end'
+[19:45:41 INFO]: [ChunkHolderManager] Saving all chunkholders for world 'minecraft:the_end'
+[19:45:41 INFO]: [ChunkHolderManager] Saved 0 block chunks, 0 entity chunks, 0 poi chunks in world 'minecraft:the_end' in 0.01s
+[19:45:41 INFO]: [ChunkHolderManager] Waiting 60s for chunk I/O to halt for world 'minecraft:the_end'
+[19:45:41 INFO]: [ChunkHolderManager] Halted I/O scheduler for world 'minecraft:the_end'
+[19:45:41 INFO]: Waiting for all RegionFile I/O tasks to complete...
+[19:45:41 INFO]: All RegionFile I/O tasks to complete
+[19:45:41 INFO]: [MoonriseCommon] Awaiting termination of worker pool for up to 60s...
+[19:45:41 INFO]: [MoonriseCommon] Awaiting termination of I/O pool for up to 60s...

@@ -8,9 +8,9 @@ from pathlib import Path
 import re
 
 root = Path(__file__).resolve().parents[2]
-skills = root / "src/com/praya/myitems/builder/ability/weapon"
-register = (root / "src/com/praya/myitems/manager/register/RegisterAbilityWeaponManager.java").read_text("utf-8")
-manager = (root / "src/com/praya/myitems/manager/game/AbilityWeaponManager.java").read_text("utf-8")
+skills = root / "src/com/lymeowz/item/builder/ability/weapon"
+register = (root / "src/com/lymeowz/item/manager/register/RegisterAbilityWeaponManager.java").read_text("utf-8")
+manager = (root / "src/com/lymeowz/item/manager/game/AbilityWeaponManager.java").read_text("utf-8")
 venom = (skills / "AbilityWeaponVenomSpread.java").read_text("utf-8")
 files = sorted(skills.glob("AbilityWeapon*.java"))
 assert len(files) == 25, f"Expected 25 skill classes, got {len(files)}"

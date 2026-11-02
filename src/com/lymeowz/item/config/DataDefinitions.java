@@ -1,10 +1,10 @@
 package com.lymeowz.item.config;
 
-import com.praya.myitems.MyItems;
-import com.praya.agarthalib.utility.FileUtil;
+import com.lymeowz.item.MyItems;
+import com.lymeowz.lib.utility.FileUtil;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.configuration.file.FileConfiguration;
-import core.praya.agarthalib.builder.main.DataBuild;
+import com.lymeowz.lib.core.builder.main.DataBuild;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;

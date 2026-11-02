@@ -1,0 +1,61 @@
+// 
+// Decompiled by Procyon v0.5.36
+// 
+
+package com.lymeowz.item.config.plugin;
+
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.FileConfiguration;
+import com.lymeowz.item.manager.plugin.DataManager;
+import com.lymeowz.item.manager.plugin.PluginManager;
+import java.util.List;
+import java.util.ArrayList;
+import org.bukkit.plugin.java.JavaPlugin;
+import com.lymeowz.lib.utility.FileUtil;
+import java.util.Iterator;
+import java.util.Collection;
+import com.lymeowz.item.MyItems;
+import com.lymeowz.lib.core.builder.command.CommandBuild;
+import java.util.HashMap;
+import com.lymeowz.item.builder.handler.HandlerCommand;
+
+public class CommandConfig extends HandlerCommand
+{
+    private final HashMap<String, CommandBuild> mapCommand;
+    
+    public CommandConfig(final MyItems plugin) {
+        super(plugin);
+        this.mapCommand = new HashMap<String, CommandBuild>();
+        this.setup();
+    }
+    
+    public final Collection<String> getCommandIDs() {
+        return this.mapCommand.keySet();
+    }
+    
+    public final Collection<CommandBuild> getCommandBuilds() {
+        return this.mapCommand.values();
+    }
+    
+    public final CommandBuild getCommand(final String id) {
+        for (final String key : this.getCommandIDs()) {
+            if (key.equalsIgnoreCase(id)) {
+                return this.mapCommand.get(key);
+            }
+        }
+        return null;
+    }
+    
+    public final void setup() {
+        this.reset();
+        this.loadConfig();
+    }
+    
+    private final void reset() {
+        this.mapCommand.clear();
+    }
+    
+    private final void loadConfig() {
+        this.mapCommand.putAll(com.lymeowz.item.command.CommandDefinitions.load(this.plugin));
+    }
+}

@@ -47,7 +47,7 @@ for label, data in [("AgarthaLib", agartha), ("MyItems", myitems)]:
         errors.append(f"{label}: VaultAPI must not pull Bukkit 1.13 transitively")
 
 lib_version = re.search(r'^version\s*=\s*"([^"]+)"', agartha, re.M)
-linked_version = coordinates(myitems).get("com.praya:LyMeowzLib")
+linked_version = coordinates(myitems).get("com.lymeowz:LyMeowzLib")
 if lib_version is None or linked_version != lib_version.group(1):
     errors.append(
         f"LyMeowzItem dependency on LyMeowzLib {linked_version} does not match library version "
@@ -58,9 +58,9 @@ if lib_version is None or linked_version != lib_version.group(1):
 # messages. Check the complete modern hover-data handoff, not merely that
 # the server-side source compiles while packetGetJsonItem returns null.
 lib_root = root / "agarthalib"
-message_packet = (lib_root / "src/com/praya/agarthalib/packet/message/PacketMessage_Paper26_3.java").read_text("utf-8")
-json_builder = (lib_root / "src/core/praya/agarthalib/builder/message/JsonBuild.java").read_text("utf-8")
-hover_payload = (lib_root / "src/com/praya/agarthalib/modern/Paper26HoverItemPayload.java").read_text("utf-8")
+message_packet = (lib_root / "src/com/lymeowz/lib/packet/message/PacketMessage_Paper26_3.java").read_text("utf-8")
+json_builder = (lib_root / "src/com/lymeowz/lib/core/builder/message/JsonBuild.java").read_text("utf-8")
+hover_payload = (lib_root / "src/com/lymeowz/lib/modern/Paper26HoverItemPayload.java").read_text("utf-8")
 if not re.search(
     r'packetGetJsonItem\s*\([^)]*\)\s*\{[^}]*return\s+Paper26HoverItemPayload\.encode\(',
     message_packet, re.S,

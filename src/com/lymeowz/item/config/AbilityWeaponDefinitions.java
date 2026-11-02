@@ -1,10 +1,10 @@
 package com.lymeowz.item.config;
 
-import api.praya.myitems.builder.ability.AbilityWeaponProperties;
-import com.praya.agarthalib.utility.FileUtil;
-import com.praya.myitems.MyItems;
-import com.praya.myitems.manager.plugin.DataManager;
-import com.praya.myitems.manager.plugin.PluginManager;
+import com.lymeowz.item.api.builder.ability.AbilityWeaponProperties;
+import com.lymeowz.lib.utility.FileUtil;
+import com.lymeowz.item.MyItems;
+import com.lymeowz.item.manager.plugin.DataManager;
+import com.lymeowz.item.manager.plugin.PluginManager;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;

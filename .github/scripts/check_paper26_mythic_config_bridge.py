@@ -7,8 +7,8 @@ DOES NOT prove current MythicMobs event runtime compatibility.
 from pathlib import Path
 
 root = Path(__file__).resolve().parents[2]
-legacy = root / "src/com/praya/myitems/listener/support"
-modern = root / "src/com/praya/myitems/modern"
+legacy = root / "src/com/lymeowz/item/listener/support"
+modern = root / "src/com/lymeowz/item/modern"
 
 old_drop = (legacy / "ListenerMythicMobDeath.java").read_text("utf-8")
 new_drop = (modern / "Paper26MythicDropHandler.java").read_text("utf-8")
@@ -59,7 +59,7 @@ assert "new com.lymeowz.item.integration.MythicEventAccess(eventType)" in legacy
 )
 assert "getDropTable()" not in bridge, "Named tables require a separate audited API"
 
-boot = (root / "src/com/praya/myitems/MyItems.java").read_text("utf-8")
+boot = (root / "src/com/lymeowz/item/MyItems.java").read_text("utf-8")
 assert "Paper26MythicMobsEventBridge.register(this)" in boot
 assert "new ListenerMythicMobDeath" not in boot
 assert "new ListenerMythicMobSpawn" not in boot

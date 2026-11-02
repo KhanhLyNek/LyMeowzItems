@@ -6,17 +6,17 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.potion.PotionEffectType;
-import com.praya.myitems.MyItems;
-import com.praya.myitems.manager.plugin.PluginManager;
-import com.praya.myitems.manager.plugin.DataManager;
-import com.praya.agarthalib.utility.FileUtil;
-import com.praya.agarthalib.utility.TextUtil;
-import com.praya.agarthalib.utility.PotionUtil;
-import com.praya.agarthalib.utility.MathUtil;
-import api.praya.myitems.builder.potion.PotionProperties;
-import api.praya.myitems.builder.element.Element;
-import api.praya.myitems.builder.element.ElementBoost;
-import api.praya.myitems.builder.element.ElementPotion;
+import com.lymeowz.item.MyItems;
+import com.lymeowz.item.manager.plugin.PluginManager;
+import com.lymeowz.item.manager.plugin.DataManager;
+import com.lymeowz.lib.utility.FileUtil;
+import com.lymeowz.lib.utility.TextUtil;
+import com.lymeowz.lib.utility.PotionUtil;
+import com.lymeowz.lib.utility.MathUtil;
+import com.lymeowz.item.api.builder.potion.PotionProperties;
+import com.lymeowz.item.api.builder.element.Element;
+import com.lymeowz.item.api.builder.element.ElementBoost;
+import com.lymeowz.item.api.builder.element.ElementPotion;
 
 /**
  * Canonical elemental YAML reader using the exact legacy key aliases, potion

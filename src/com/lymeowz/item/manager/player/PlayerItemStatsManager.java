@@ -1,0 +1,133 @@
+// 
+// Decompiled by Procyon v0.5.36
+// 
+
+package com.lymeowz.item.manager.player;
+
+import com.lymeowz.item.api.builder.lorestats.LoreStatsArmor;
+import com.lymeowz.item.api.builder.item.ItemStatsArmor;
+import com.lymeowz.item.api.builder.element.ElementBoostStats;
+import com.lymeowz.item.api.builder.socket.SocketGemsProperties;
+import com.lymeowz.item.api.builder.lorestats.LoreStatsWeapon;
+import java.util.HashMap;
+import org.bukkit.inventory.ItemStack;
+import com.lymeowz.item.manager.game.ElementManager;
+import com.lymeowz.item.manager.game.SocketManager;
+import com.lymeowz.item.manager.game.LoreStatsManager;
+import com.lymeowz.item.manager.game.GameManager;
+import com.lymeowz.item.api.builder.lorestats.LoreStatsOption;
+import org.bukkit.entity.LivingEntity;
+import com.lymeowz.lib.core.enums.main.SlotType;
+import com.lymeowz.item.api.builder.lorestats.LoreStatsEnum;
+import com.lymeowz.lib.core.enums.main.Slot;
+import com.lymeowz.lib.core.bridge.unity.Bridge;
+import com.lymeowz.item.config.plugin.MainConfig;
+import com.lymeowz.item.api.builder.item.ItemStatsWeapon;
+import com.lymeowz.item.modern.Paper26StatsMath;
+import org.bukkit.entity.Player;
+import com.lymeowz.item.MyItems;
+import com.lymeowz.item.builder.handler.HandlerManager;
+
+public class PlayerItemStatsManager extends HandlerManager
+{
+    protected PlayerItemStatsManager(final MyItems plugin) {
+        super(plugin);
+    }
+    
+    public final ItemStatsWeapon getItemStatsWeapon(final Player player) {
+        final GameManager gameManager = this.plugin.getGameManager();
+        final LoreStatsManager statsManager = gameManager.getStatsManager();
+        final SocketManager socketManager = gameManager.getSocketManager();
+        final ElementManager elementManager = gameManager.getElementManager();
+        final MainConfig mainConfig = MainConfig.getInstance();
+        final ItemStack itemEquipmentMainHand = Bridge.getBridgeEquipment().getEquipment(player, Slot.MAINHAND);
+        final ItemStack itemEquipmentOffHand = Bridge.getBridgeEquipment().getEquipment(player, Slot.OFFHAND);
+        final boolean enableItemUniversal = mainConfig.isStatsEnableItemUniversal();
+        final boolean enableOffHand = mainConfig.isAbilityWeaponEnableOffHand();
+        final boolean hasStatsCriticalChance = statsManager.hasLoreStats(itemEquipmentMainHand, LoreStatsEnum.CRITICAL_CHANCE) || (enableOffHand && statsManager.hasLoreStats(itemEquipmentOffHand, LoreStatsEnum.CRITICAL_CHANCE));
+        final boolean hasStatsCriticalDamage = statsManager.hasLoreStats(itemEquipmentMainHand, LoreStatsEnum.CRITICAL_DAMAGE) || (enableOffHand && statsManager.hasLoreStats(itemEquipmentOffHand, LoreStatsEnum.CRITICAL_DAMAGE));
+        final HashMap<String, Double> mapElementWeapon = elementManager.getMapElement((LivingEntity)player, SlotType.WEAPON, false);
+        final LoreStatsWeapon statsWeapon = statsManager.getLoreStatsWeapon((LivingEntity)player, false, false);
+        final SocketGemsProperties socket = socketManager.getSocketProperties((LivingEntity)player, false);
+        final ElementBoostStats elementWeapon = elementManager.getElementBoostStats(mapElementWeapon);
+        final double scaleOffHandValue = mainConfig.getStatsScaleOffHandValue();
+        double statsDamage = 0.0;
+        double statsDamageDiff = 0.0;
+        Slot[] values;
+        for (int length = (values = Slot.values()).length, i = 0; i < length; ++i) {
+            final Slot slot = values[i];
+            if (slot.getType().equals((Object)SlotType.WEAPON) || enableItemUniversal) {
+                final ItemStack item = Bridge.getBridgeEquipment().getEquipment(player, slot);
+                if (item != null) {
+                    final double scaleValue = slot.equals((Object)Slot.OFFHAND) ? (enableOffHand ? scaleOffHandValue : 0.0) : 1.0;
+                    final double statsItemDamageMin = statsManager.getLoreValue(item, LoreStatsEnum.DAMAGE, LoreStatsOption.MIN) * scaleValue;
+                    final double statsItemDamageMax = statsManager.getLoreValue(item, LoreStatsEnum.DAMAGE, LoreStatsOption.MAX) * scaleValue;
+                    final double statsItemDamageDiff = statsItemDamageMax - statsItemDamageMin;
+                    statsDamage += statsItemDamageMin;
+                    statsDamageDiff += statsItemDamageDiff;
+                }
+            }
+        }
+        final double socketDamage = socket.getAdditionalDamage() + statsDamage * socket.getPercentDamage() / 100.0;
+        final double elementDamage = elementWeapon.getBaseAdditionalDamage() + statsDamage * elementWeapon.getBasePercentDamage() / 100.0;
+        final double attributeDamage = statsDamage + socketDamage + elementDamage;
+        final double baseDamage = 0.0;
+        final double basePenetration = 0.0;
+        final double basePvPDamage = 100.0;
+        final double basePvEDamage = 100.0;
+        final double baseCriticalChance = 5.0;
+        final double baseCriticalDamage = 1.2;
+        final double baseAttackAoERadius = 0.0;
+        final double baseAttackAoEDamage = 0.0;
+        final double baseHitRate = 100.0;
+        final double baseDamageMinValue = statsDamage;
+        final double baseDamageMaxValue = statsDamage + statsDamageDiff;
+        final double totalDamageMin = 0.0 + attributeDamage;
+        final double totalDamageMax = baseDamageMaxValue
+                + socket.getAdditionalDamage() + baseDamageMaxValue * socket.getPercentDamage() / 100.0
+                + elementWeapon.getBaseAdditionalDamage() + baseDamageMaxValue * elementWeapon.getBasePercentDamage() / 100.0;
+        final double totalPenetration = 0.0 + statsWeapon.getPenetration() + socket.getPenetration();
+        final double totalPvPDamage = 100.0 + statsWeapon.getPvPDamage() + socket.getPvPDamage();
+        final double totalPvEDamage = 100.0 + statsWeapon.getPvEDamage() + socket.getPvEDamage();
+        final double totalCriticalChance = Paper26StatsMath.criticalChance(hasStatsCriticalChance,
+                statsWeapon.getCriticalChance(), socket.getCriticalChance(), 0.0);
+        final double totalCriticalDamage = Paper26StatsMath.criticalDamageMultiplier(hasStatsCriticalDamage,
+                statsWeapon.getCriticalDamage(), socket.getCriticalDamage(), 0.0);
+        final double totalAttackAoERadius = 0.0 + statsWeapon.getAttackAoERadius() + socket.getAttackAoERadius();
+        final double totalAttackAoEDamage = 0.0 + statsWeapon.getAttackAoEDamage() + socket.getAttackAoEDamage();
+        final double totalHitRate = 100.0 + statsWeapon.getHitRate() + socket.getHitRate();
+        return new ItemStatsWeapon(totalDamageMin, totalDamageMax, totalPenetration, totalPvPDamage, totalPvEDamage, totalAttackAoERadius, totalAttackAoEDamage, totalCriticalChance, totalCriticalDamage, totalHitRate, socketDamage, elementDamage, baseDamageMinValue, baseDamageMaxValue);
+    }
+    
+    public final ItemStatsArmor getItemStatsArmor(final Player player) {
+        final GameManager gameManager = this.plugin.getGameManager();
+        final LoreStatsManager statsManager = gameManager.getStatsManager();
+        final SocketManager socketManager = gameManager.getSocketManager();
+        final LoreStatsArmor statsArmor = statsManager.getLoreStatsArmor((LivingEntity)player, false);
+        final SocketGemsProperties socket = socketManager.getSocketProperties((LivingEntity)player, false);
+        final double statsDefense = statsArmor.getDefense();
+        final double socketDefense = socket.getAdditionalDefense() + statsDefense * socket.getPercentDefense() / 100.0;
+        final double attributeDefense = statsDefense + socketDefense;
+        final double baseDefense = 0.0;
+        final double basePvPDefense = 100.0;
+        final double basePvEDefense = 100.0;
+        final double baseHealth = 0.0;
+        final double baseHealthRegen = 0.0;
+        final double baseStaminaMax = 0.0;
+        final double baseStaminaRegen = 0.0;
+        final double baseBlockAmount = 25.0;
+        final double baseBlockRate = 0.0;
+        final double baseDodgeRate = 0.0;
+        final double totalDefense = 0.0 + attributeDefense;
+        final double totalPvPDefense = 100.0 + statsArmor.getPvPDefense() + socket.getPvPDefense();
+        final double totalPvEDefense = 100.0 + statsArmor.getPvEDefense() + socket.getPvEDefense();
+        final double totalHealth = 0.0 + statsArmor.getHealth() + socket.getHealth();
+        final double totalHealthRegen = 0.0 + statsArmor.getHealthRegen() + socket.getHealthRegen();
+        final double totalStaminaMax = 0.0 + statsArmor.getStaminaMax() + socket.getStaminaMax();
+        final double totalStaminaRegen = 0.0 + statsArmor.getStaminaRegen() + socket.getStaminaRegen();
+        final double totalBlockAmount = 25.0 + statsArmor.getBlockAmount() + socket.getBlockAmount();
+        final double totalBlockRate = 0.0 + statsArmor.getBlockRate() + socket.getBlockRate();
+        final double totalDodgeRate = 0.0 + statsArmor.getDodgeRate() + socket.getDodgeRate();
+        return new ItemStatsArmor(totalDefense, totalPvPDefense, totalPvEDefense, totalHealth, totalHealthRegen, totalStaminaMax, totalStaminaRegen, totalBlockAmount, totalBlockRate, totalDodgeRate, socketDefense);
+    }
+}

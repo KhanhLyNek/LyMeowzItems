@@ -1,15 +1,15 @@
 package com.lymeowz.item.config;
 
-import api.praya.myitems.builder.item.ItemGenerator;
-import api.praya.myitems.builder.item.ItemGeneratorTier;
-import api.praya.myitems.builder.item.ItemGeneratorType;
-import api.praya.myitems.builder.item.ItemTier;
-import api.praya.myitems.builder.item.ItemType;
-import com.praya.agarthalib.utility.FileUtil;
-import com.praya.agarthalib.utility.TextUtil;
-import com.praya.myitems.MyItems;
-import com.praya.myitems.manager.game.ItemTierManager;
-import com.praya.myitems.manager.game.ItemTypeManager;
+import com.lymeowz.item.api.builder.item.ItemGenerator;
+import com.lymeowz.item.api.builder.item.ItemGeneratorTier;
+import com.lymeowz.item.api.builder.item.ItemGeneratorType;
+import com.lymeowz.item.api.builder.item.ItemTier;
+import com.lymeowz.item.api.builder.item.ItemType;
+import com.lymeowz.lib.utility.FileUtil;
+import com.lymeowz.lib.utility.TextUtil;
+import com.lymeowz.item.MyItems;
+import com.lymeowz.item.manager.game.ItemTierManager;
+import com.lymeowz.item.manager.game.ItemTypeManager;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;

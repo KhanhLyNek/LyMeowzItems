@@ -1,8 +1,8 @@
 package com.lymeowz.item.config;
 
-import com.praya.agarthalib.utility.EquipmentUtil;
-import com.praya.agarthalib.utility.FileUtil;
-import com.praya.myitems.MyItems;
+import com.lymeowz.lib.utility.EquipmentUtil;
+import com.lymeowz.lib.utility.FileUtil;
+import com.lymeowz.item.MyItems;
 import java.io.File;
 import java.util.HashMap;
 import java.util.function.UnaryOperator;

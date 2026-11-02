@@ -2,7 +2,7 @@ plugins {
     `java`
 }
 
-group = "com.praya"
+group = "com.lymeowz"
 version = "6.4.6-paper26.3-SNAPSHOT"
 
 repositories {
@@ -28,7 +28,7 @@ dependencies {
 
     // Publish AgarthaLib to Maven local first using:
     // cd ../AgarthaLib && gradle publishToMavenLocal
-    compileOnly("com.praya:LyMeowzLib:2.17.2-paper26.3-SNAPSHOT")
+    compileOnly("com.lymeowz:LyMeowzLib:2.17.2-paper26.3-SNAPSHOT")
 
     // Optional APIs are provided by installed plugins, NEVER bundled in MyItems.
     // Keep these coordinates identical to the corresponding AgarthaLib APIs.
@@ -102,9 +102,9 @@ tasks.register<JavaCompile>("compilePaper26MyItemsPlaceholderBridges") {
     description = "Compile real MyItems PAPI 2.12 expansion and shared AgarthaLib MVdW registration"
     group = "verification"
     source = fileTree(".") {
-        include("src/com/praya/myitems/builder/placeholder/ReplacerPlaceholderAPIBuild.java")
-        include("src/com/praya/myitems/builder/placeholder/ReplacerMVDWPlaceholderAPIBuild.java")
-        include("src/com/praya/myitems/builder/placeholder/Paper26LegacyPlaceholderId.java")
+        include("src/com/lymeowz/item/builder/placeholder/ReplacerPlaceholderAPIBuild.java")
+        include("src/com/lymeowz/item/builder/placeholder/ReplacerMVDWPlaceholderAPIBuild.java")
+        include("src/com/lymeowz/item/builder/placeholder/Paper26LegacyPlaceholderId.java")
         include("ci/paper26-placeholder-bridge-stubs/**/*.java")
     }
     classpath = paper26PlaceholderApi + files(
@@ -124,7 +124,7 @@ tasks.register<JavaCompile>("compilePaper26MyItemsMythicLib") {
     description = "Verify optional MythicLib provider boundary without bundling MythicLib"
     group = "verification"
     source = fileTree(".") {
-        include("src/com/praya/myitems/modern/Paper26MyItemsMythicLibAdapter.java")
+        include("src/com/lymeowz/item/modern/Paper26MyItemsMythicLibAdapter.java")
         include("ci/paper26-mythiclib-stubs/**/*.java")
     }
     classpath = paper26PlaceholderApi
@@ -141,7 +141,7 @@ tasks.register<JavaCompile>("compilePaper26MyItemsModernProviders") {
     description = "Compile AuraSkills/MMOCore/Lands/DecentHolograms optional MyItems seam"
     group = "verification"
     source = fileTree(".") {
-        include("src/com/praya/myitems/modern/Paper26MyItemsModernProviders.java")
+        include("src/com/lymeowz/item/modern/Paper26MyItemsModernProviders.java")
         include("ci/paper26-modern-provider-stubs/**/*.java")
     }
     classpath = paper26PlaceholderApi
@@ -156,7 +156,7 @@ tasks.register<JavaCompile>("compilePaper26LegacyPlaceholderIdSelfTest") {
     description = "Compile pure Java MyItems legacy placeholder ID regression tests"
     group = "verification"
     source = fileTree(".") {
-        include("src/com/praya/myitems/builder/placeholder/Paper26LegacyPlaceholderId.java")
+        include("src/com/lymeowz/item/builder/placeholder/Paper26LegacyPlaceholderId.java")
         include("ci/paper26-placeholder-prefix-test/**/*.java")
     }
     classpath = files()
@@ -173,7 +173,7 @@ tasks.register<JavaExec>("testPaper26LegacyPlaceholderIds") {
     group = "verification"
     dependsOn("compilePaper26LegacyPlaceholderIdSelfTest")
     classpath = files(layout.buildDirectory.dir("paper26-placeholder-prefix-tests"))
-    mainClass.set("com.praya.myitems.builder.placeholder.Paper26LegacyPlaceholderIdSelfTest")
+    mainClass.set("com.lymeowz.item.builder.placeholder.Paper26LegacyPlaceholderIdSelfTest")
     javaLauncher.set(javaToolchains.launcherFor {
         languageVersion.set(JavaLanguageVersion.of(25))
     })
@@ -198,7 +198,7 @@ tasks.register<JavaCompile>("compilePaper26MythicMobsReader") {
     description = "Compile isolated MythicMobs 5.x event/config reader against published API"
     group = "verification"
     source = fileTree(".") {
-        include("src/com/praya/myitems/modern/Paper26MythicMobsReader.java")
+        include("src/com/lymeowz/item/modern/Paper26MythicMobsReader.java")
     }
     classpath = paper26PlaceholderApi + paper26MythicMobsApi
     destinationDirectory.set(layout.buildDirectory.dir("paper26-mythicmobs-api-check"))
@@ -214,7 +214,7 @@ tasks.register<JavaCompile>("compilePaper26MythicEventAccessSelfTest") {
     description = "Compile cached public Mythic event ABI accessor and regression cases"
     group = "verification"
     source = fileTree(".") {
-        include("src/com/praya/myitems/modern/Paper26MythicEventAccess.java")
+        include("src/com/lymeowz/item/modern/Paper26MythicEventAccess.java")
         include("src/com/lymeowz/item/integration/MythicEventAccess.java")
         include("ci/paper26-mythic-event-test/**/*.java")
     }
@@ -230,7 +230,7 @@ tasks.register<JavaExec>("testPaper26MythicEventAccess") {
     group = "verification"
     dependsOn("compilePaper26MythicEventAccessSelfTest")
     classpath = files(layout.buildDirectory.dir("paper26-mythic-event-tests"))
-    mainClass.set("com.praya.myitems.modern.Paper26MythicEventAccessSelfTest")
+    mainClass.set("com.lymeowz.item.modern.Paper26MythicEventAccessSelfTest")
     javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(25)) })
 }
 
@@ -337,11 +337,11 @@ tasks.register<JavaCompile>("compilePaper26StatsSelfTest") {
     description = "Compile isolated MyItems stats parsing and combat math regression tests"
     group = "verification"
     source = fileTree(".") {
-        include("src/com/praya/myitems/modern/Paper26LoreStatsNumbers.java")
+        include("src/com/lymeowz/item/modern/Paper26LoreStatsNumbers.java")
         include("src/com/lymeowz/item/stats/LoreStatsNumbers.java")
-        include("src/com/praya/myitems/modern/Paper26StatsMath.java")
+        include("src/com/lymeowz/item/modern/Paper26StatsMath.java")
         include("src/com/lymeowz/item/stats/CombatMath.java")
-        include("src/com/praya/myitems/modern/Paper26ModernStatsFormulas.java")
+        include("src/com/lymeowz/item/modern/Paper26ModernStatsFormulas.java")
         include("src/com/lymeowz/item/stats/ModernStatsFormulas.java")
         include("ci/paper26-stats-test/**/*.java")
     }
@@ -357,7 +357,7 @@ tasks.register<JavaExec>("testPaper26Stats") {
     group = "verification"
     dependsOn("compilePaper26StatsSelfTest")
     classpath = files(layout.buildDirectory.dir("paper26-stats-tests"))
-    mainClass.set("com.praya.myitems.modern.Paper26StatsSelfTest")
+    mainClass.set("com.lymeowz.item.modern.Paper26StatsSelfTest")
     javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(25)) })
 }
 

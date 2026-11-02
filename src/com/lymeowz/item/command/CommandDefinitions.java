@@ -1,10 +1,10 @@
 package com.lymeowz.item.command;
 
-import com.praya.myitems.MyItems;
-import com.praya.myitems.manager.plugin.PluginManager;
-import com.praya.myitems.manager.plugin.DataManager;
-import com.praya.agarthalib.utility.FileUtil;
-import core.praya.agarthalib.builder.command.CommandBuild;
+import com.lymeowz.item.MyItems;
+import com.lymeowz.item.manager.plugin.PluginManager;
+import com.lymeowz.item.manager.plugin.DataManager;
+import com.lymeowz.lib.utility.FileUtil;
+import com.lymeowz.lib.core.builder.command.CommandBuild;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.ConfigurationSection;
