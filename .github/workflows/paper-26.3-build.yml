@@ -18,10 +18,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - name: Enforce complete LyMeowz Java namespaces
-        run: python3 ci/check_full_namespace.py
       - name: Checkout MyItems
         uses: actions/checkout@v4
+      - name: Enforce complete LyMeowz Java namespaces
+        run: python3 ci/check_full_namespace.py
       - name: Guard original YAML and gameplay logic
         run: python3 .github/scripts/check_legacy_logic.py
       - name: Check all skill class registrations and reviewed Venom Spread fix
