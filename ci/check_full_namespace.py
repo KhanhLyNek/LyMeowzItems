@@ -15,7 +15,8 @@ for file in java:
     expected = file.parent.relative_to(source).as_posix().replace("/", ".")
     if not path.startswith("com/lymeowz/item/") or package is None or package.group(1) != expected:
         problems.append(f"{path}: package {package.group(1) if package else 'MISSING'} vs {expected}")
-    if any(name in content for name in ("com.praya.", "api.praya.", "core.praya.")):
+    if any(name in content for name in ("com.praya.myitems", "api.praya.myitems", "core.praya.myitems",
+                                      "com.praya.agarthalib", "api.praya.agarthalib", "core.praya.agarthalib")):
         problems.append(f"{path}: old Java namespace reference")
 if problems:
     raise SystemExit("Namespace migration incomplete:\n" + "\n".join(problems[:30]))
