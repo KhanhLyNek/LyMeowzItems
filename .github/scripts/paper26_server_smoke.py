@@ -177,7 +177,7 @@ def run_server(folder):
             "PASS: cancelled instant damage clears metadata for next valid hit",
             "PASS: invalid passive effect scheduler periods fall back to 100 ticks",
             "PASS: command/shoot/special cooldown category isolation",
-            "PASS: bounded combat target search preserves spherical and infinite reach"):
+            "PASS: combat target search preserves freshly spawned mobs and spherical reach"):
         if label not in all_logs:
             raise AssertionError(f"Missing live postmigration combat/scheduler regression: {label}")
     if "PASS: EssentialsX 2.22 IWarps contract on real Paper plugin classloaders" not in all_logs:

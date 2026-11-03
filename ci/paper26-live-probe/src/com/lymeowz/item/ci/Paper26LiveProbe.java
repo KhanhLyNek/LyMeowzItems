@@ -1259,7 +1259,7 @@ public final class Paper26LiveProbe extends JavaPlugin {
         getLogger().info("PASS: command/shoot/special cooldown category isolation");
     }
 
-    /** Bounded world queries must retain original spherical combat reach. */
+    /** Combat target lookup must include newly spawned mobs in the same tick. */
     private void verifyNearbyCombatTargets() {
         final World world = Bukkit.getWorlds().get(0);
         final Location origin = world.getSpawnLocation().clone().add(21.5, 4, 21.5);
@@ -1279,7 +1279,7 @@ public final class Paper26LiveProbe extends JavaPlugin {
                     origin, Double.POSITIVE_INFINITY);
             check(unlimited.contains(near) && unlimited.contains(far),
                     "unbounded combat radius preserves original all-world behavior");
-            getLogger().info("PASS: bounded combat target search preserves spherical and infinite reach");
+            getLogger().info("PASS: combat target search preserves freshly spawned mobs and spherical reach");
         } finally {
             if (near.isValid()) near.remove();
             if (far.isValid()) far.remove();
