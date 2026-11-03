@@ -5,6 +5,7 @@
 package com.lymeowz.item.manager.game;
 
 import com.lymeowz.lib.utility.TextUtil;
+import com.lymeowz.item.ability.SkillProcChain;
 import com.lymeowz.item.api.builder.ability.AbilityWeaponAttributeCastDamage;
 import com.lymeowz.item.api.builder.ability.AbilityWeaponAttributeBaseDamage;
 import com.lymeowz.lib.core.bridge.unity.Bridge;
@@ -167,6 +168,12 @@ public class AbilityWeaponManager extends HandlerManager
     }
     
     public final HashMap<AbilityWeapon, Integer> getMapAbilityWeapon(final Collection<AbilityItemWeapon> listAbilityItemWeapon, final boolean checkChance) {
+        return this.getMapAbilityWeapon(listAbilityItemWeapon, checkChance, 0);
+    }
+
+    /** Skill-proc depth applies only to roll chances; grade and damage are unchanged. */
+    public final HashMap<AbilityWeapon, Integer> getMapAbilityWeapon(final Collection<AbilityItemWeapon> listAbilityItemWeapon,
+                                                                     final boolean checkChance, final int chainDepth) {
         final RegisterManager registerManager = this.plugin.getRegisterManager();
         final RegisterAbilityWeaponManager registerAbilityWeaponManager = registerManager.getRegisterAbilityWeaponManager();
         final HashMap<AbilityWeapon, Integer> mapAbilityWeapon = new HashMap<AbilityWeapon, Integer>();
@@ -174,7 +181,9 @@ public class AbilityWeaponManager extends HandlerManager
             final HashMap<String, Integer> mapAbilityGrade = new HashMap<String, Integer>();
             for (final AbilityItemWeapon abilityItemWeapon : listAbilityItemWeapon) {
                 final double chance = abilityItemWeapon.getChance();
-                if (!checkChance || MathUtil.chanceOf(chance)) {
+                if (!checkChance || (chainDepth == 0
+                        ? MathUtil.chanceOf(chance)
+                        : SkillProcChain.roll(chance, chainDepth, Math.random()))) {
                     final String ability = abilityItemWeapon.getAbility();
                     final int grade = abilityItemWeapon.getGrade();
                     if (mapAbilityGrade.containsKey(ability)) {
@@ -202,11 +211,16 @@ public class AbilityWeaponManager extends HandlerManager
     }
     
     public final HashMap<AbilityWeapon, Integer> getMapAbilityWeapon(final LivingEntity entity, final boolean checkChance) {
+        return this.getMapAbilityWeapon(entity, checkChance, 0);
+    }
+
+    public final HashMap<AbilityWeapon, Integer> getMapAbilityWeapon(final LivingEntity entity,
+                                                                     final boolean checkChance, final int chainDepth) {
         final HashMap<AbilityWeapon, Integer> mapAbilityWeapon = new HashMap<AbilityWeapon, Integer>();
         if (entity != null) {
             final HashMap<Slot, Collection<AbilityItemWeapon>> mapListAbilityItemWeapon = this.getMapListAbilityItemWeapon(entity);
             for (final Collection<AbilityItemWeapon> listAbilityItemWeapon : mapListAbilityItemWeapon.values()) {
-                final HashMap<AbilityWeapon, Integer> mapAbilityWeaponSlot = this.getMapAbilityWeapon(listAbilityItemWeapon, checkChance);
+                final HashMap<AbilityWeapon, Integer> mapAbilityWeaponSlot = this.getMapAbilityWeapon(listAbilityItemWeapon, checkChance, chainDepth);
                 for (final AbilityWeapon abilityWeapon : mapAbilityWeaponSlot.keySet()) {
                     final int grade = mapAbilityWeaponSlot.get(abilityWeapon);
                     if (mapAbilityWeapon.containsKey(abilityWeapon)) {
