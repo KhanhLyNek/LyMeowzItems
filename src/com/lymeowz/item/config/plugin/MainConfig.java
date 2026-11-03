@@ -565,7 +565,11 @@ public class MainConfig extends HandlerConfig
     }
     
     public final int getPassivePeriodEffect() {
-        return this.config.getInt("Configuration.Passive.Period_Effect");
+        final int configured = this.config.getInt("Configuration.Passive.Period_Effect");
+        // BukkitScheduler rejects non-positive periods. A malformed or missing
+        // user value must not abort plugin startup/reload; use the documented
+        // 100-tick default rather than hammering the scheduler every tick.
+        return configured > 0 ? configured : 100;
     }
     
     public final String getPassiveBuffFormat() {

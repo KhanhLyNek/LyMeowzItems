@@ -322,9 +322,14 @@ public class ListenerEntityDamageByEntity extends HandlerEvent implements Listen
                     }
                     if (!isAreaDamage) {
                         elementManager.applyElementPotion(attacker, victims, mapElement);
-                        for (final AbilityWeapon abilityWeapon : mapAbilityWeapon.keySet()) {
-                            final int grade2 = mapAbilityWeapon.get(abilityWeapon);
-                            abilityWeapon.cast(entityAttacker, entityVictims, grade2, damage);
+                        // Secondary skill damage must not roll another weapon
+                        // ability. Otherwise a 100% ability can recursively
+                        // proc itself or trigger unbounded skill chains.
+                        if (!isSkillDamage) {
+                            for (final AbilityWeapon abilityWeapon : mapAbilityWeapon.keySet()) {
+                                final int grade2 = mapAbilityWeapon.get(abilityWeapon);
+                                abilityWeapon.cast(entityAttacker, entityVictims, grade2, damage);
+                            }
                         }
                     }
                     final double bonusPercentDamage = Paper26StatsMath.outgoingBonus(EntityUtil.isPlayer((Entity)victims), pvpDamage, pveDamage);
