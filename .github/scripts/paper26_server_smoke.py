@@ -195,6 +195,7 @@ def run_server(folder):
         raise AssertionError("Real Paper mob-target ability casts failed")
     for label in (
             "PASS: real equipped Stats lore for damage, defense, penetration, crit, AoE, PvP/PvE, accuracy, block and dodge",
+            "PASS: live LyMeowzLib Stats API neutral plugin lookup and accumulation",
             "PASS: Venom_Blast 10 at 100% equipped weapon -> real hit -> Wither",
             "PASS: secondary weapon procs attenuate 80% per generation and stop at chain cap",
             "PASS: cancelled instant damage clears metadata for next valid hit",
