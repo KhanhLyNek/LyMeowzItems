@@ -1210,6 +1210,30 @@ public final class Paper26LiveProbe extends JavaPlugin {
         getLogger().info("PASS: Paper Stats item lore NBT and PvP/PvE branch contracts");
     }
 
+    /** A malformed config must never abort scheduler creation during reload. */
+    private void verifyPassivePeriodFallback() throws Exception {
+        final com.lymeowz.item.config.plugin.MainConfig main =
+                com.lymeowz.item.config.plugin.MainConfig.getInstance();
+        final java.lang.reflect.Field field =
+                com.lymeowz.item.config.plugin.MainConfig.class.getDeclaredField("config");
+        field.setAccessible(true);
+        final org.bukkit.configuration.file.FileConfiguration config =
+                (org.bukkit.configuration.file.FileConfiguration) field.get(main);
+        final String key = "Configuration.Passive.Period_Effect";
+        final Object original = config.get(key);
+        try {
+            config.set(key, 0);
+            check(main.getPassivePeriodEffect() == 100, "zero passive scheduler period uses safe default");
+            config.set(key, -25);
+            check(main.getPassivePeriodEffect() == 100, "negative passive period uses safe default");
+            config.set(key, 20);
+            check(main.getPassivePeriodEffect() == 20, "valid passive scheduler period preserved");
+        } finally {
+            config.set(key, original);
+        }
+        getLogger().info("PASS: invalid passive effect scheduler periods fall back to 100 ticks");
+    }
+
     /** Disposable mob-vs-mob live damage hook; client PvP requires separate players. */
     private void verifyRealMobStatsCombat() {
         final MyItems myitems = (MyItems) Bukkit.getPluginManager().getPlugin("LyMeowzItem");
@@ -1271,6 +1295,22 @@ public final class Paper26LiveProbe extends JavaPlugin {
                     "Venom_Blast equipped real Paper hit must apply Wither to zombies");
             getLogger().info("PASS: Venom_Blast 10 at 100% equipped weapon -> real hit -> Wither");
 
+            // Damage originating from a skill must never re-trigger the same
+            // 100% weapon skill. Give the metadata a generous expiration so
+            // this assertion is independent of CI scheduling latency.
+            b.setNoDamageTicks(0);
+            b.removePotionEffect(org.bukkit.potion.PotionEffectType.WITHER);
+            com.lymeowz.lib.utility.MetadataUtil.setCooldown(
+                    b, "Skill_Damage", 5_000L);
+            try {
+                b.damage(2.0, a);
+                check(!b.hasPotionEffect(org.bukkit.potion.PotionEffectType.WITHER),
+                        "secondary skill damage must not proc Venom_Blast again");
+            } finally {
+                com.lymeowz.lib.utility.CombatUtil.removeMetadataSkillDamage(b);
+            }
+            getLogger().info("PASS: skill-generated damage cannot proc another 100% weapon ability");
+
             // Simulate a protection plugin cancelling the attack at HIGH,
             // before MyItems' HIGHEST damage listener. No damage, skill,
             // or extra lore-durability usage may be applied to this hit.
@@ -1300,11 +1340,18 @@ public final class Paper26LiveProbe extends JavaPlugin {
                 check(stats.getLoreValue(a.getEquipment().getItemInMainHand(),
                         LoreStatsEnum.DURABILITY, LoreStatsOption.CURRENT) == protectedDurability,
                         "cancelled hit cannot consume weapon lore durability");
+                b.setNoDamageTicks(0);
+                intercepted[0] = false;
+                com.lymeowz.lib.utility.CombatUtil.instantDamage(a, b, 2.0);
+                check(intercepted[0], "protection plugin cancelled instant damage event");
+                check(!com.lymeowz.lib.utility.CombatUtil.hasMetadataInstantDamage(b),
+                        "cancelled instant damage must not leave stale victim metadata");
             } finally {
                 org.bukkit.event.HandlerList.unregisterAll(protection);
             }
             getLogger().info("PASS: Paper live mob-vs-mob stats damage event");
             getLogger().info("PASS: Paper HIGH-priority protection cancellation interoperability");
+            getLogger().info("PASS: cancelled instant damage clears metadata for next valid hit");
         } finally {
             if (a.isValid()) a.remove();
             if (b.isValid()) b.remove();
@@ -1662,6 +1709,7 @@ public final class Paper26LiveProbe extends JavaPlugin {
             verifyItemModels();
             verifyHexItemColors();
             verifyRealStatsLore();
+            verifyPassivePeriodFallback();
             verifyRealMobStatsCombat();
         } catch (Throwable error) {
             getLogger().severe("FAIL: live NBT/ability compatibility test: " + error);
