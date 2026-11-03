@@ -139,10 +139,32 @@ def run_server(folder):
                 ready = True
                 break
         if ready:
-            for command in ("version LyMeowzItem", "version LyMeowzLib", "stop"):
+            for command in ("version LyMeowzItem", "version LyMeowzLib"):
                 process.stdin.write(command + "\n")
                 process.stdin.flush()
                 time.sleep(1)
+            # The new moving-target smoke case needs 26+ actual Paper
+            # ticks, which can span several wall-clock seconds while the
+            # fresh CI world is generating chunks. Do not send 'stop'
+            # before this deferred gameplay assertion has run.
+            moving_pass = "PASS: Venom_Blast flowers and final explosion follow moving target"
+            moving_fail = "FAIL: moving Venom Blast target probe:"
+            combat_deadline = time.monotonic() + 45
+            passed = False
+            while time.monotonic() < combat_deadline and process.poll() is None:
+                try:
+                    line = events.get(timeout=1)
+                except queue.Empty:
+                    continue
+                if moving_fail in line:
+                    raise AssertionError(f"Real Paper moving Venom Blast probe failed: {line.strip()}")
+                if moving_pass in line:
+                    passed = True
+                    break
+            if not passed:
+                raise AssertionError("Real Paper moving Venom Blast probe did not complete")
+            process.stdin.write("stop\n")
+            process.stdin.flush()
         else:
             raise AssertionError("Paper 26.3 did not finish startup")
         try:
