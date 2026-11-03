@@ -171,6 +171,13 @@ def run_server(folder):
         raise AssertionError("Real Paper 25-ability registration/configuration/lore probe did not pass")
     if "PASS: 3/3 real mob-target skill casts (Freeze, Roots, Curse)" not in all_logs:
         raise AssertionError("Real Paper mob-target ability casts failed")
+    for label in (
+            "PASS: Venom_Blast 10 at 100% equipped weapon -> real hit -> Wither",
+            "PASS: skill-generated damage cannot proc another 100% weapon ability",
+            "PASS: cancelled instant damage clears metadata for next valid hit",
+            "PASS: invalid passive effect scheduler periods fall back to 100 ticks"):
+        if label not in all_logs:
+            raise AssertionError(f"Missing live postmigration combat/scheduler regression: {label}")
     if "PASS: EssentialsX 2.22 IWarps contract on real Paper plugin classloaders" not in all_logs:
         raise AssertionError("Modern EssentialsX public warp ABI provider smoke failed")
     if "PASS: ItemsAdder/Oraxen model-only bridges and ItemStack roundtrip" not in all_logs:
