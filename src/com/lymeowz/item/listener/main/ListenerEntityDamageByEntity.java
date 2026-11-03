@@ -5,6 +5,7 @@
 package com.lymeowz.item.listener.main;
 
 import org.bukkit.Location;
+import com.lymeowz.item.ability.SkillProcChain;
 import java.util.Iterator;
 import com.lymeowz.item.api.builder.item.ItemSetBonusEffectStats;
 import com.lymeowz.item.api.builder.item.ItemSetBonusEffectEntity;
@@ -158,6 +159,7 @@ public class ListenerEntityDamageByEntity extends HandlerEvent implements Listen
             }
             final boolean isSkillDamage = CombatUtil.isSkillDamage(victims);
             final boolean isAreaDamage = CombatUtil.isAreaDamage(victims);
+            final int skillChainDepth = SkillProcChain.depthForHit(attacker, isSkillDamage || isAreaDamage);
             if (CombatUtil.hasMetadataInstantDamage((Entity)victims)) {
                 CombatUtil.removeMetadataInstantDamage((Entity)victims);
                 return;
@@ -201,12 +203,19 @@ public class ListenerEntityDamageByEntity extends HandlerEvent implements Listen
                     final HashMap<String, Double> elementVictims = elementManager.getMapElement(victims, SlotType.ARMOR);
                     final HashMap<String, Double> mapElement = elementManager.getElementCalculation(elementAttacker, elementVictims);
                     final ElementBoostStats elementBoostStatsAttacker = elementManager.getElementBoostStats(mapElement);
-                    final HashMap<AbilityWeapon, Integer> mapAbilityWeapon = abilityWeaponManager.getMapAbilityWeapon(attacker, true);
+                    final HashMap<AbilityWeapon, Integer> mapAbilityWeapon =
+                            abilityWeaponManager.getMapAbilityWeapon(attacker, true, skillChainDepth);
                     final ItemSetBonusEffectEntity itemSetBonusEffectEntityAttacker = itemSetManager.getItemSetBonusEffectEntity(attacker);
                     final ItemSetBonusEffectEntity itemSetBonusEffectEntityVictims = itemSetManager.getItemSetBonusEffectEntity(victims);
                     final ItemSetBonusEffectStats itemSetBonusEffectStatsAttacker = itemSetBonusEffectEntityAttacker.getEffectStats();
                     final ItemSetBonusEffectStats itemSetBonusEffectStatsVictims = itemSetBonusEffectEntityVictims.getEffectStats();
                     for (final AbilityWeapon abilityWeaponItemSet : itemSetBonusEffectEntityAttacker.getAllAbilityWeapon()) {
+                        // Item-set abilities have no separate lore chance; their
+                        // formerly guaranteed secondary casts must also attenuate.
+                        if (skillChainDepth > 0 && !SkillProcChain.roll(
+                                100.0, skillChainDepth, Math.random())) {
+                            continue;
+                        }
                         final int maxGrade = abilityWeaponItemSet.getMaxGrade();
                         if (mapAbilityWeapon.containsKey(abilityWeaponItemSet)) {
                             final int totalGrade = mapAbilityWeapon.get(abilityWeaponItemSet) + itemSetBonusEffectEntityAttacker.getGradeAbilityWeapon(abilityWeaponItemSet);
@@ -322,14 +331,17 @@ public class ListenerEntityDamageByEntity extends HandlerEvent implements Listen
                     }
                     if (!isAreaDamage) {
                         elementManager.applyElementPotion(attacker, victims, mapElement);
-                        // Secondary skill damage must not roll another weapon
-                        // ability. Otherwise a 100% ability can recursively
-                        // proc itself or trigger unbounded skill chains.
-                        if (!isSkillDamage) {
-                            for (final AbilityWeapon abilityWeapon : mapAbilityWeapon.keySet()) {
-                                final int grade2 = mapAbilityWeapon.get(abilityWeapon);
-                                abilityWeapon.cast(entityAttacker, entityVictims, grade2, damage);
-                            }
+                    }
+                    // Direct hits use original lore chances. Damage from a
+                    // skill or AoE may also proc, but loses 80% of its chance
+                    // per generation and stops at the bounded chain depth.
+                    // Do not run the element-potion or AoE branches again.
+                    if (SkillProcChain.multiplier(skillChainDepth) > 0.0) {
+                        final double castDamage = damage;
+                        for (final AbilityWeapon abilityWeapon : mapAbilityWeapon.keySet()) {
+                            final int grade2 = mapAbilityWeapon.get(abilityWeapon);
+                            SkillProcChain.castAtDepth(attacker, skillChainDepth,
+                                    () -> abilityWeapon.cast(entityAttacker, entityVictims, grade2, castDamage));
                         }
                     }
                     final double bonusPercentDamage = Paper26StatsMath.outgoingBonus(EntityUtil.isPlayer((Entity)victims), pvpDamage, pveDamage);
