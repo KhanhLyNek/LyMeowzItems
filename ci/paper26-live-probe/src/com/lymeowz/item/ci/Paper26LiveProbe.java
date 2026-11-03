@@ -1224,6 +1224,33 @@ public final class Paper26LiveProbe extends JavaPlugin {
             final double after = b.getHealth();
             check(Double.isFinite(after) && after >= 0 && after <= before, "finite live mob combat health");
 
+            // End-to-end regression for the actual user report:
+            // /attr Ability Venom_Blast 10 100 -> real lore -> equipped weapon
+            // -> chance roll -> Paper entity damage event -> cast effect.
+            final AbilityWeaponManager weaponSkills = myitems.getGameManager().getAbilityWeaponManager();
+            final AbilityWeapon venomBlast = myitems.getRegisterManager()
+                    .getRegisterAbilityWeaponManager().getAbilityWeapon("Venom_Blast");
+            check(venomBlast != null, "Venom_Blast exists in live registry");
+            final ItemStack venomSword = new ItemStack(Material.IRON_SWORD);
+            final String venomLore = weaponSkills.getTextAbility("Venom_Blast", 10, 100.0);
+            EquipmentUtil.addLore(venomSword, venomLore);
+            final var parsedVenom = weaponSkills.getListAbilityItemWeapon(venomSword);
+            check(parsedVenom.size() == 1
+                            && parsedVenom.get(0).getAbility().equalsIgnoreCase("Venom_Blast")
+                            && parsedVenom.get(0).getGrade() == 10
+                            && parsedVenom.get(0).getChance() == 100.0,
+                    "Venom_Blast 100% item lore must decode and preserve grade");
+            a.getEquipment().setItemInMainHand(venomSword);
+            final var rolledSkills = weaponSkills.getMapAbilityWeapon(a, true);
+            check(rolledSkills.containsKey(venomBlast) && rolledSkills.get(venomBlast) == 10,
+                    "Venom_Blast 100% must survive equipped-weapon chance roll");
+            b.setNoDamageTicks(0);
+            b.removePotionEffect(org.bukkit.potion.PotionEffectType.WITHER);
+            b.damage(2.0, a);
+            check(b.hasPotionEffect(org.bukkit.potion.PotionEffectType.WITHER),
+                    "Venom_Blast equipped real Paper hit must apply Wither to zombies");
+            getLogger().info("PASS: Venom_Blast 10 at 100% equipped weapon -> real hit -> Wither");
+
             // Simulate a protection plugin cancelling the attack at HIGH,
             // before MyItems' HIGHEST damage listener. No damage, skill,
             // or extra lore-durability usage may be applied to this hit.
