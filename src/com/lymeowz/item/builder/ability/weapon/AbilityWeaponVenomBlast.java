@@ -140,7 +140,8 @@ public class AbilityWeaponVenomBlast extends AbilityWeapon implements AbilityWea
         }
         if (target instanceof LivingEntity) {
             final LivingEntity victims = (LivingEntity)target;
-            final Location location = victims.getLocation().add(0.0, 0.5, 0.0);
+            // Track the entity rather than capturing one fixed world position.
+            final org.bukkit.World castWorld = victims.getWorld();
             final PotionEffectType potionType = PotionUtil.getPoisonType(victims);
             final double spreadDamage = this.getCastBonusDamage(grade) + damage * (this.getCastPercentDamage(grade) / 100.0);
             final double blastDamage = spreadDamage * 2.0;
@@ -150,7 +151,6 @@ public class AbilityWeaponVenomBlast extends AbilityWeapon implements AbilityWea
             final int amplifier = potionType.equals((Object)PotionEffectType.WITHER) ? 2 : 1;
             final PotionEffect potion = PotionUtil.createPotion(potionType, duration, amplifier);
             final Set<LivingEntity> units = new HashSet<LivingEntity>();
-            final Collection<Player> players = (Collection<Player>)PlayerUtil.getNearbyPlayers(location, mainConfig.getEffectRange());
             victims.addPotionEffect(potion);
             new BukkitRunnable() {
                 int time = 0;
@@ -159,10 +159,16 @@ public class AbilityWeaponVenomBlast extends AbilityWeapon implements AbilityWea
                 double z;
                 
                 public void run() {
-                    if (this.time > 4) {
+                    if (this.time > 4 || !victims.isValid() || victims.isDead()
+                            || victims.getWorld() != castWorld) {
                         this.cancel();
                         return;
                     }
+                    // Use the target's CURRENT position for every venom ring,
+                    // nearby-mob query, sound, flower and final explosion.
+                    final Location location = victims.getLocation().add(0.0, 0.5, 0.0);
+                    final Collection<Player> players = (Collection<Player>)PlayerUtil.getNearbyPlayers(
+                            location, mainConfig.getEffectRange());
                     if (this.time == 4) {
                         Bridge.getBridgeParticle().playParticle(players, ParticleEnum.EXPLOSION_HUGE, location, 10, 0.0, 0.2, 0.0, 0.05000000074505806);
                         Bridge.getBridgeSound().playSound(players, location, SoundEnum.ENTITY_GENERIC_EXPLODE, 1.0f, 1.0f);
@@ -189,9 +195,9 @@ public class AbilityWeaponVenomBlast extends AbilityWeapon implements AbilityWea
                         for (int i = 0; i < 360; i += 30) {
                             this.x = Math.sin(i) * this.radius;
                             this.z = Math.cos(i) * this.radius;
-                            location.add(this.x, 0.0, this.z);
-                            Bridge.getBridgeParticle().playParticle(players, ParticleEnum.VILLAGER_HAPPY, location, 3, 0.05, 0.05, 0.05, 0.05000000074505806);
-                            final Block block = location.getBlock();
+                            final Location flowerPosition = location.clone().add(this.x, 0.0, this.z);
+                            Bridge.getBridgeParticle().playParticle(players, ParticleEnum.VILLAGER_HAPPY, flowerPosition, 3, 0.05, 0.05, 0.05, 0.05000000074505806);
+                            final Block block = flowerPosition.getBlock();
                             final Material material = block.getType();
                             if (material.equals((Object)Material.AIR)) {
                                 final Location locationBlock = block.getLocation();
@@ -199,7 +205,9 @@ public class AbilityWeaponVenomBlast extends AbilityWeapon implements AbilityWea
                                 block.setType(materialDandelion);
                                 block.setMetadata("Anti_Block_Physic", MetadataUtil.createMetadata((Object)true));
                                 new BukkitRunnable() {
-                                    final Location locationFlower = location.clone();
+                                    // Snapshot this particular flower position: the
+                                    // tracked target may move before cleanup runs.
+                                    final Location locationFlower = flowerPosition.clone();
                                     
                                     public void run() {
                                         final Block blockFlower = this.locationFlower.getBlock();
@@ -212,7 +220,6 @@ public class AbilityWeaponVenomBlast extends AbilityWeapon implements AbilityWea
                                     }
                                 }.runTaskLater((Plugin)plugin, 5L);
                             }
-                            location.subtract(this.x, 0.0, this.z);
                         }
                         --this.radius;
                     }
