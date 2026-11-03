@@ -1424,6 +1424,17 @@ public final class Paper26LiveProbe extends JavaPlugin {
                             "nested synchronous skills advance exactly one generation"));
             check(com.lymeowz.item.ability.SkillProcChain.depthForHit(null, true) == 1,
                     "nested cast context is always restored");
+            // A delayed Bukkit task runs without the original ThreadLocal.
+            // Its attacker marker must still preserve the last generation.
+            com.lymeowz.item.ability.SkillProcChain.castAtDepth(a, 0, () -> { });
+            check(com.lymeowz.item.ability.SkillProcChain.depthForHit(a, true) == 1,
+                    "delayed damage resumes at the first secondary generation");
+            com.lymeowz.item.ability.SkillProcChain.castAtDepth(a, 2, () -> { });
+            check(com.lymeowz.item.ability.SkillProcChain.depthForHit(a, true) == 3,
+                    "delayed task metadata advances with its latest generation");
+            com.lymeowz.item.ability.SkillProcChain.castAtDepth(a, 0, () -> { });
+            check(com.lymeowz.item.ability.SkillProcChain.depthForHit(a, true) == 3,
+                    "later original casts do not reset earlier pending chain attenuation");
             // With a 100% original lore ability, the fifth secondary
             // generation must still be blocked on a real Paper damage event.
             b.setNoDamageTicks(0);
