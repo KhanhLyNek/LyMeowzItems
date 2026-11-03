@@ -1436,12 +1436,49 @@ public final class Paper26LiveProbe extends JavaPlugin {
             check(a.getEquipment() != null && b.getEquipment() != null, "mob equipment");
             final ItemStack weapon = new ItemStack(Material.IRON_SWORD);
             EquipmentUtil.addLore(weapon, stats.getTextLoreStats(LoreStatsEnum.DAMAGE, 5));
+            EquipmentUtil.addLore(weapon, stats.getTextLoreStats(LoreStatsEnum.PENETRATION, 12));
+            EquipmentUtil.addLore(weapon, stats.getTextLoreStats(LoreStatsEnum.PVP_DAMAGE, 10));
+            EquipmentUtil.addLore(weapon, stats.getTextLoreStats(LoreStatsEnum.PVE_DAMAGE, 20));
+            EquipmentUtil.addLore(weapon, stats.getTextLoreStats(LoreStatsEnum.CRITICAL_CHANCE, 100));
+            EquipmentUtil.addLore(weapon, stats.getTextLoreStats(LoreStatsEnum.CRITICAL_DAMAGE, 1.5));
+            EquipmentUtil.addLore(weapon, stats.getTextLoreStats(LoreStatsEnum.HIT_RATE, 15));
+            EquipmentUtil.addLore(weapon, stats.getTextLoreStats(LoreStatsEnum.ATTACK_AOE_RADIUS, 2));
+            EquipmentUtil.addLore(weapon, stats.getTextLoreStats(LoreStatsEnum.ATTACK_AOE_DAMAGE, 30));
             a.getEquipment().setItemInMainHand(weapon);
             final ItemStack armor = new ItemStack(Material.IRON_CHESTPLATE);
             EquipmentUtil.addLore(armor, stats.getTextLoreStats(LoreStatsEnum.DEFENSE, 2));
+            EquipmentUtil.addLore(armor, stats.getTextLoreStats(LoreStatsEnum.PVP_DEFENSE, 15));
+            EquipmentUtil.addLore(armor, stats.getTextLoreStats(LoreStatsEnum.PVE_DEFENSE, 20));
+            EquipmentUtil.addLore(armor, stats.getTextLoreStats(LoreStatsEnum.BLOCK_RATE, 50));
+            EquipmentUtil.addLore(armor, stats.getTextLoreStats(LoreStatsEnum.DODGE_RATE, 25));
+            EquipmentUtil.addLore(armor, stats.getTextLoreStats(LoreStatsEnum.HEALTH, 4));
             b.getEquipment().setChestplate(armor);
-            check(stats.getLoreStatsWeapon(a).getDamage() >= 5, "equipped mob damage");
-            check(stats.getLoreStatsArmor(b).getDefense() >= 2, "equipped mob defense");
+            final var weaponStats = stats.getLoreStatsWeapon(a);
+            final var armorStats = stats.getLoreStatsArmor(b);
+            check(weaponStats.getDamage() >= 5, "equipped mob damage");
+            check(armorStats.getDefense() >= 2, "equipped mob defense");
+            check(Math.abs(weaponStats.getPenetration() - 12) < 0.000001, "equipped penetration");
+            check(Math.abs(weaponStats.getPvPDamage() - 10) < 0.000001, "equipped PvP damage");
+            check(Math.abs(weaponStats.getPvEDamage() - 20) < 0.000001, "equipped PvE damage");
+            check(Math.abs(weaponStats.getCriticalChance() - 100) < 0.000001, "equipped critical chance");
+            check(Math.abs(weaponStats.getCriticalDamage() - 0.5) < 0.000001, "equipped 1.5x crit damage");
+            check(Math.abs(weaponStats.getHitRate() - 15) < 0.000001, "equipped accuracy");
+            check(Math.abs(weaponStats.getAttackAoERadius() - 2) < 0.000001, "equipped AoE radius");
+            check(Math.abs(weaponStats.getAttackAoEDamage() - 30) < 0.000001, "equipped AoE damage");
+            check(Math.abs(armorStats.getPvPDefense() - 15) < 0.000001, "equipped PvP defense");
+            check(Math.abs(armorStats.getPvEDefense() - 20) < 0.000001, "equipped PvE defense");
+            check(Math.abs(armorStats.getBlockRate() - 50) < 0.000001, "equipped block chance");
+            check(Math.abs(armorStats.getDodgeRate() - 25) < 0.000001, "equipped dodge chance");
+            check(Math.abs(armorStats.getHealth() - 4) < 0.000001, "equipped max health stat");
+            check(com.lymeowz.item.stats.CombatMath.criticalChance(true, weaponStats.getCriticalChance(), 0, 0) == 100,
+                    "live lore critical chance reaches the damage formula");
+            check(Math.abs(com.lymeowz.item.stats.CombatMath.criticalDamageMultiplier(true, weaponStats.getCriticalDamage(), 0, 0) - 1.5) < 0.000001,
+                    "live lore critical damage reaches the damage formula");
+            check(com.lymeowz.item.stats.CombatMath.outgoingBonus(false, weaponStats.getPvPDamage(), weaponStats.getPvEDamage()) == 20,
+                    "live PvE damage branch");
+            check(com.lymeowz.item.stats.CombatMath.incomingDefenseBonus(false, armorStats.getPvPDefense(), armorStats.getPvEDefense()) == 20,
+                    "live PvE defense branch");
+            getLogger().info("PASS: real equipped Stats lore for damage, defense, penetration, crit, AoE, PvP/PvE, accuracy, block and dodge");
             final double before = b.getHealth();
             b.damage(2, a);
             final double after = b.getHealth();
