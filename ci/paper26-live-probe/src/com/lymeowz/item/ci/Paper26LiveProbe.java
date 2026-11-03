@@ -1499,6 +1499,15 @@ public final class Paper26LiveProbe extends JavaPlugin {
                     "Lib Stats missing multiplier plugin uses identity");
             check(apiStats.unregister(), "Lib Stats entity fixture unregisters");
             getLogger().info("PASS: live LyMeowzLib Stats API neutral plugin lookup and accumulation");
+            // Restore the simple fixture before combat ability checks:
+            // 100% critical chance + high PvE/AoE stats can kill the disposable
+            // victim before the next Venom_Blast damage event fires.
+            final ItemStack simpleWeapon = new ItemStack(Material.IRON_SWORD);
+            EquipmentUtil.addLore(simpleWeapon, stats.getTextLoreStats(LoreStatsEnum.DAMAGE, 5));
+            a.getEquipment().setItemInMainHand(simpleWeapon);
+            final ItemStack simpleArmor = new ItemStack(Material.IRON_CHESTPLATE);
+            EquipmentUtil.addLore(simpleArmor, stats.getTextLoreStats(LoreStatsEnum.DEFENSE, 2));
+            b.getEquipment().setChestplate(simpleArmor);
             final double before = b.getHealth();
             b.damage(2, a);
             final double after = b.getHealth();
