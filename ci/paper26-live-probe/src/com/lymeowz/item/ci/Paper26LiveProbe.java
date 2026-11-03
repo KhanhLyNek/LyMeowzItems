@@ -1267,8 +1267,13 @@ public final class Paper26LiveProbe extends JavaPlugin {
         // Spawn and inspect on subsequent ticks to model actual live combat,
         // rather than misclassifying Paper startup timing as a range bug.
         Bukkit.getScheduler().runTaskLater(this, () -> {
-            final Zombie near = world.spawn(origin, Zombie.class);
-            final Zombie far = world.spawn(origin.clone().add(8, 0, 0), Zombie.class);
+            // Hostile mobs can be despawned by the CI world's Peaceful
+            // difficulty before the next tick. Cows persist across ticks,
+            // so this tests range lookup rather than peaceful despawning.
+            final org.bukkit.entity.Cow near =
+                    world.spawn(origin, org.bukkit.entity.Cow.class);
+            final org.bukkit.entity.Cow far =
+                    world.spawn(origin.clone().add(8, 0, 0), org.bukkit.entity.Cow.class);
             near.setAI(false);
             far.setAI(false);
             Bukkit.getScheduler().runTaskLater(this, () -> {
