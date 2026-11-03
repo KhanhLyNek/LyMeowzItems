@@ -1,0 +1,46 @@
+name: One-time audited merged-branch cleanup
+on:
+  push:
+    branches: [master]
+    paths:
+      - .github/workflows/one-time-merged-branch-cleanup-20261103.yml
+permissions:
+  contents: write
+jobs:
+  delete-merged-branches:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Verify exact branch heads are ancestors of master before deleting
+        shell: bash
+        run: |
+          set -euo pipefail
+          while read -r branch expected; do
+            [[ -z "$branch" ]] && continue
+            actual="$(git ls-remote --heads origin "refs/heads/${branch}" | awk '{print $1}')"
+            if [[ -z "$actual" ]]; then
+              echo "ALREADY DELETED: $branch"
+              continue
+            fi
+            if [[ "$actual" != "$expected" ]]; then
+              echo "::error::REF CHANGED: $branch ($actual != $expected)"
+              exit 1
+            fi
+            if ! git merge-base --is-ancestor "$actual" HEAD; then
+              echo "::error::NOT FULLY MERGED INTO MASTER: $branch"
+              exit 1
+            fi
+            echo "DELETING VERIFIED MERGED BRANCH: $branch"
+            git push origin --delete "refs/heads/${branch}"
+            echo "DELETED: $branch"
+          done <<'REVIEWED_BRANCHES'
+          feat/skill-secondary-proc-80-percent-attenuation 015332073c617331dfa613ef081b7b8e5ac0da61
+          feat/venom-blast-target-follow-20261103 69a15ae6ae0ff853c4a619b2be22e687a3fab619
+          fix/paper26-live-combat-chunk-lifecycle-20261103 5e64cc817122d2898f34becf9705c8d2a6f451bd
+          fix/stats-audit-safe-master-workflows-20261103 2452754bc582f556ea1318487a6c8c2a97867fb1
+          migration/itemconfig-read-pipeline-20261101 b57963105978514f2c4c03856180b53a2bbd3ae5
+          REVIEWED_BRANCHES
