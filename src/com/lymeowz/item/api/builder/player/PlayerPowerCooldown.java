@@ -113,17 +113,27 @@ public class PlayerPowerCooldown
     }
     
     public final void clearPowerCooldown(final PowerEnum power) {
+        if (power == null) {
+            return;
+        }
+        // Clearing one category must not reset unrelated command, projectile,
+        // or special-power cooldowns (fall-through used to clear all of them).
         switch (power) {
             case COMMAND: {
                 this.mapPowerCommandCooldown.clear();
+                break;
             }
             case SHOOT: {
                 this.mapPowerShootCooldown.clear();
+                break;
             }
             case SPECIAL: {
                 this.mapPowerSpecialCooldown.clear();
+                break;
             }
-            default: {}
+            default: {
+                break;
+            }
         }
     }
     
