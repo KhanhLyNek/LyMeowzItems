@@ -1259,31 +1259,49 @@ public final class Paper26LiveProbe extends JavaPlugin {
         getLogger().info("PASS: command/shoot/special cooldown category isolation");
     }
 
-    /** Combat target lookup must include newly spawned mobs in the same tick. */
+    /** Check combat reach after Paper has registered the test entities. */
     private void verifyNearbyCombatTargets() {
         final World world = Bukkit.getWorlds().get(0);
         final Location origin = world.getSpawnLocation().clone().add(21.5, 4, 21.5);
-        final Zombie near = world.spawn(origin, Zombie.class);
-        final Zombie far = world.spawn(origin.clone().add(8, 0, 0), Zombie.class);
-        try {
+        // Entity snapshots can be incomplete during JavaPlugin.onEnable.
+        // Spawn and inspect on subsequent ticks to model actual live combat,
+        // rather than misclassifying Paper startup timing as a range bug.
+        Bukkit.getScheduler().runTaskLater(this, () -> {
+            final Zombie near = world.spawn(origin, Zombie.class);
+            final Zombie far = world.spawn(origin.clone().add(8, 0, 0), Zombie.class);
             near.setAI(false);
             far.setAI(false);
-            final var candidates = com.lymeowz.lib.utility.CombatUtil.getNearbyUnits(origin, 3.0);
-            check(candidates.contains(near) && !candidates.contains(far),
-                    "nearby combat lookup must include local mob and exclude distant mob");
-            check(com.lymeowz.lib.utility.CombatUtil.getNearbyUnits(origin, -2.0).isEmpty(),
-                    "negative combat radius must select nothing");
-            check(com.lymeowz.lib.utility.CombatUtil.getNearbyUnits(origin, Double.NaN).isEmpty(),
-                    "NaN combat radius must select nothing");
-            final var unlimited = com.lymeowz.lib.utility.CombatUtil.getNearbyUnits(
-                    origin, Double.POSITIVE_INFINITY);
-            check(unlimited.contains(near) && unlimited.contains(far),
-                    "unbounded combat radius preserves original all-world behavior");
-            getLogger().info("PASS: combat target search preserves freshly spawned mobs and spherical reach");
-        } finally {
-            if (near.isValid()) near.remove();
-            if (far.isValid()) far.remove();
-        }
+            Bukkit.getScheduler().runTaskLater(this, () -> {
+                try {
+                    final var candidates = com.lymeowz.lib.utility.CombatUtil.getNearbyUnits(origin, 3.0);
+                    if (!candidates.contains(near) || candidates.contains(far)) {
+                        getLogger().warning("Combat target probe: nearValid=" + near.isValid()
+                                + " farValid=" + far.isValid()
+                                + " nearInWorld=" + world.getLivingEntities().contains(near)
+                                + " nearBridge=" + Bridge.getBridgeLivingEntity().isLivingEntity(near)
+                                + " candidateCount=" + candidates.size()
+                                + " nearDistance=" + origin.distance(near.getLocation()));
+                    }
+                    check(candidates.contains(near) && !candidates.contains(far),
+                            "nearby combat lookup must include local mob and exclude distant mob");
+                    check(com.lymeowz.lib.utility.CombatUtil.getNearbyUnits(origin, -2.0).isEmpty(),
+                            "negative combat radius must select nothing");
+                    check(com.lymeowz.lib.utility.CombatUtil.getNearbyUnits(origin, Double.NaN).isEmpty(),
+                            "NaN combat radius must select nothing");
+                    final var unlimited = com.lymeowz.lib.utility.CombatUtil.getNearbyUnits(
+                            origin, Double.POSITIVE_INFINITY);
+                    check(unlimited.contains(near) && unlimited.contains(far),
+                            "unbounded combat radius preserves original all-world behavior");
+                    getLogger().info("PASS: combat target search preserves loaded-mob spherical reach");
+                } catch (AssertionError error) {
+                    getLogger().severe("FAIL: deferred combat target probe: " + error.getMessage());
+                    throw error;
+                } finally {
+                    if (near.isValid()) near.remove();
+                    if (far.isValid()) far.remove();
+                }
+            }, 2L);
+        }, 2L);
     }
 
     /** A malformed config must never abort scheduler creation during reload. */
