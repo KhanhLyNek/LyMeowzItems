@@ -139,10 +139,32 @@ def run_server(folder):
                 ready = True
                 break
         if ready:
-            for command in ("version LyMeowzItem", "version LyMeowzLib", "stop"):
+            for command in ("version LyMeowzItem", "version LyMeowzLib"):
                 process.stdin.write(command + "\n")
                 process.stdin.flush()
                 time.sleep(1)
+            # The new moving-target smoke case needs 26+ actual Paper
+            # ticks, which can span several wall-clock seconds while the
+            # fresh CI world is generating chunks. Do not send 'stop'
+            # before this deferred gameplay assertion has run.
+            moving_pass = "PASS: Venom_Blast flowers and final explosion follow moving target"
+            moving_fail = "FAIL: moving Venom Blast target probe:"
+            combat_deadline = time.monotonic() + 45
+            passed = False
+            while time.monotonic() < combat_deadline and process.poll() is None:
+                try:
+                    line = events.get(timeout=1)
+                except queue.Empty:
+                    continue
+                if moving_fail in line:
+                    raise AssertionError(f"Real Paper moving Venom Blast probe failed: {line.strip()}")
+                if moving_pass in line:
+                    passed = True
+                    break
+            if not passed:
+                raise AssertionError("Real Paper moving Venom Blast probe did not complete")
+            process.stdin.write("stop\n")
+            process.stdin.flush()
         else:
             raise AssertionError("Paper 26.3 did not finish startup")
         try:
@@ -172,12 +194,15 @@ def run_server(folder):
     if "PASS: 3/3 real mob-target skill casts (Freeze, Roots, Curse)" not in all_logs:
         raise AssertionError("Real Paper mob-target ability casts failed")
     for label in (
+            "PASS: real equipped Stats lore for damage, defense, penetration, crit, AoE, PvP/PvE, accuracy, block and dodge",
+            "PASS: live LyMeowzLib Stats API neutral plugin lookup and accumulation",
             "PASS: Venom_Blast 10 at 100% equipped weapon -> real hit -> Wither",
             "PASS: secondary weapon procs attenuate 80% per generation and stop at chain cap",
             "PASS: cancelled instant damage clears metadata for next valid hit",
             "PASS: invalid passive effect scheduler periods fall back to 100 ticks",
             "PASS: command/shoot/special cooldown category isolation",
-            "PASS: combat target search preserves loaded-mob spherical reach"):
+            "PASS: combat target search preserves loaded-mob spherical reach",
+            "PASS: Venom_Blast flowers and final explosion follow moving target"):
         if label not in all_logs:
             raise AssertionError(f"Missing live postmigration combat/scheduler regression: {label}")
     if "PASS: EssentialsX 2.22 IWarps contract on real Paper plugin classloaders" not in all_logs:

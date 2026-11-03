@@ -37,6 +37,11 @@ def main() -> int:
             reviewed_fixes = {
                 "src/com/lymeowz/item/builder/ability/weapon/AbilityWeaponVenomSpread.java":
                     "bd4932b02dc53374879527ace2bdfc4aae5e2541",
+                # Reviewed Venom Blast target-follow: replace the one-shot
+                # location snapshot with per-tick target tracking, preserving
+                # original damage and timings. Exact blob only; baseline stays.
+                "src/com/lymeowz/item/builder/ability/weapon/AbilityWeaponVenomBlast.java":
+                    "08c6b619882e2031519da8a469bf81a8021bf331",
                 "src/com/lymeowz/item/builder/ability/weapon/AbilityWeaponFreeze.java":
                     "98b3d1dfe854c7a26b12e54429487a00708d14b2",
                 "src/com/lymeowz/item/builder/ability/weapon/AbilityWeaponRoots.java":

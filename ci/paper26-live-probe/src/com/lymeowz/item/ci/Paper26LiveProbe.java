@@ -1319,6 +1319,83 @@ public final class Paper26LiveProbe extends JavaPlugin {
         }, 2L);
     }
 
+    /**
+     * On real Paper, move the target between venom ring ticks and prove the
+     * final explosion damages mobs at its NEW position, not the old point.
+     * Sentinels spawn after all intermediate ring damage has finished.
+     */
+    private void verifyMovingVenomBlast() {
+        final World world = Bukkit.getWorlds().get(0);
+        final Location start = world.getSpawnLocation().clone().add(47.5, 18.0, 47.5);
+        final Location destination = start.clone().add(12.0, 0.0, 0.0);
+        Bukkit.getScheduler().runTaskLater(this, () -> {
+            final org.bukkit.Chunk startChunk = world.getChunkAt(start);
+            final org.bukkit.Chunk endChunk = world.getChunkAt(destination);
+            final boolean firstTicket = startChunk.addPluginChunkTicket(this);
+            final boolean secondTicket = endChunk.addPluginChunkTicket(this);
+            final org.bukkit.entity.Cow attacker = world.spawn(start.clone().add(-2.0, 0.0, 0.0),
+                    org.bukkit.entity.Cow.class);
+            final org.bukkit.entity.Cow target = world.spawn(start, org.bukkit.entity.Cow.class);
+            for (final org.bukkit.entity.Cow cow : List.of(attacker, target)) {
+                cow.setAI(false);
+                cow.setGravity(false);
+            }
+
+            final org.bukkit.entity.Cow[] oldNew = new org.bukkit.entity.Cow[2];
+            final boolean[] hit = new boolean[2];
+            final org.bukkit.event.Listener damageProbe = new org.bukkit.event.Listener() {
+                @org.bukkit.event.EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
+                public void onDamage(org.bukkit.event.entity.EntityDamageByEntityEvent event) {
+                    if (!event.getDamager().equals(attacker)) return;
+                    if (oldNew[0] != null && event.getEntity().equals(oldNew[0])) hit[0] = true;
+                    if (oldNew[1] != null && event.getEntity().equals(oldNew[1])) hit[1] = true;
+                }
+            };
+            Bukkit.getPluginManager().registerEvents(damageProbe, this);
+
+            final AbilityWeapon venom = ((MyItems) Bukkit.getPluginManager()
+                    .getPlugin("LyMeowzItem")).getRegisterManager()
+                    .getRegisterAbilityWeaponManager().getAbilityWeapon("Venom_Blast");
+            check(venom != null, "Venom Blast registered for moving-target probe");
+            venom.cast(attacker, target, 10, 50.0);
+            Bukkit.getScheduler().runTaskLater(this, () -> {
+                check(target.isValid() && target.teleport(destination),
+                        "Venom Blast test target must move to destination");
+            }, 7L);
+            Bukkit.getScheduler().runTaskLater(this, () -> {
+                oldNew[0] = world.spawn(start.clone().add(2.0, 0.0, 0.0),
+                        org.bukkit.entity.Cow.class);
+                oldNew[1] = world.spawn(destination.clone().add(2.0, 0.0, 0.0),
+                        org.bukkit.entity.Cow.class);
+                for (final org.bukkit.entity.Cow cow : oldNew) {
+                    cow.setAI(false);
+                    cow.setGravity(false);
+                }
+            }, 18L);
+            Bukkit.getScheduler().runTaskLater(this, () -> {
+                try {
+                    check(oldNew[0] != null && oldNew[1] != null,
+                            "Venom Blast sentinels created before final explosion");
+                    check(hit[1] && !hit[0],
+                            "Venom Blast explosion must hit new target location, not initial location");
+                    getLogger().info("PASS: Venom_Blast flowers and final explosion follow moving target");
+                } catch (AssertionError error) {
+                    getLogger().severe("FAIL: moving Venom Blast target probe: " + error.getMessage());
+                    throw error;
+                } finally {
+                    org.bukkit.event.HandlerList.unregisterAll(damageProbe);
+                    if (attacker.isValid()) attacker.remove();
+                    if (target.isValid()) target.remove();
+                    for (final org.bukkit.entity.Cow cow : oldNew) {
+                        if (cow != null && cow.isValid()) cow.remove();
+                    }
+                    if (firstTicket) startChunk.removePluginChunkTicket(this);
+                    if (secondTicket) endChunk.removePluginChunkTicket(this);
+                }
+            }, 26L);
+        }, 2L);
+    }
+
     /** A malformed config must never abort scheduler creation during reload. */
     private void verifyPassivePeriodFallback() throws Exception {
         final com.lymeowz.item.config.plugin.MainConfig main =
@@ -1359,12 +1436,78 @@ public final class Paper26LiveProbe extends JavaPlugin {
             check(a.getEquipment() != null && b.getEquipment() != null, "mob equipment");
             final ItemStack weapon = new ItemStack(Material.IRON_SWORD);
             EquipmentUtil.addLore(weapon, stats.getTextLoreStats(LoreStatsEnum.DAMAGE, 5));
+            EquipmentUtil.addLore(weapon, stats.getTextLoreStats(LoreStatsEnum.PENETRATION, 12));
+            EquipmentUtil.addLore(weapon, stats.getTextLoreStats(LoreStatsEnum.PVP_DAMAGE, 10));
+            EquipmentUtil.addLore(weapon, stats.getTextLoreStats(LoreStatsEnum.PVE_DAMAGE, 20));
+            EquipmentUtil.addLore(weapon, stats.getTextLoreStats(LoreStatsEnum.CRITICAL_CHANCE, 100));
+            EquipmentUtil.addLore(weapon, stats.getTextLoreStats(LoreStatsEnum.CRITICAL_DAMAGE, 1.5));
+            EquipmentUtil.addLore(weapon, stats.getTextLoreStats(LoreStatsEnum.HIT_RATE, 15));
+            EquipmentUtil.addLore(weapon, stats.getTextLoreStats(LoreStatsEnum.ATTACK_AOE_RADIUS, 2));
+            EquipmentUtil.addLore(weapon, stats.getTextLoreStats(LoreStatsEnum.ATTACK_AOE_DAMAGE, 30));
             a.getEquipment().setItemInMainHand(weapon);
             final ItemStack armor = new ItemStack(Material.IRON_CHESTPLATE);
             EquipmentUtil.addLore(armor, stats.getTextLoreStats(LoreStatsEnum.DEFENSE, 2));
+            EquipmentUtil.addLore(armor, stats.getTextLoreStats(LoreStatsEnum.PVP_DEFENSE, 15));
+            EquipmentUtil.addLore(armor, stats.getTextLoreStats(LoreStatsEnum.PVE_DEFENSE, 20));
+            EquipmentUtil.addLore(armor, stats.getTextLoreStats(LoreStatsEnum.BLOCK_RATE, 50));
+            EquipmentUtil.addLore(armor, stats.getTextLoreStats(LoreStatsEnum.DODGE_RATE, 25));
+            EquipmentUtil.addLore(armor, stats.getTextLoreStats(LoreStatsEnum.HEALTH, 4));
             b.getEquipment().setChestplate(armor);
-            check(stats.getLoreStatsWeapon(a).getDamage() >= 5, "equipped mob damage");
-            check(stats.getLoreStatsArmor(b).getDefense() >= 2, "equipped mob defense");
+            final var weaponStats = stats.getLoreStatsWeapon(a);
+            final var armorStats = stats.getLoreStatsArmor(b);
+            check(weaponStats.getDamage() >= 5, "equipped mob damage");
+            check(armorStats.getDefense() >= 2, "equipped mob defense");
+            check(Math.abs(weaponStats.getPenetration() - 12) < 0.000001, "equipped penetration");
+            check(Math.abs(weaponStats.getPvPDamage() - 10) < 0.000001, "equipped PvP damage");
+            check(Math.abs(weaponStats.getPvEDamage() - 20) < 0.000001, "equipped PvE damage");
+            check(Math.abs(weaponStats.getCriticalChance() - 100) < 0.000001, "equipped critical chance");
+            check(Math.abs(weaponStats.getCriticalDamage() - 0.5) < 0.000001, "equipped 1.5x crit damage");
+            check(Math.abs(weaponStats.getHitRate() - 15) < 0.000001, "equipped accuracy");
+            check(Math.abs(weaponStats.getAttackAoERadius() - 2) < 0.000001, "equipped AoE radius");
+            check(Math.abs(weaponStats.getAttackAoEDamage() - 30) < 0.000001, "equipped AoE damage");
+            check(Math.abs(armorStats.getPvPDefense() - 15) < 0.000001, "equipped PvP defense");
+            check(Math.abs(armorStats.getPvEDefense() - 20) < 0.000001, "equipped PvE defense");
+            check(Math.abs(armorStats.getBlockRate() - 50) < 0.000001, "equipped block chance");
+            check(Math.abs(armorStats.getDodgeRate() - 25) < 0.000001, "equipped dodge chance");
+            check(Math.abs(armorStats.getHealth() - 4) < 0.000001, "equipped max health stat");
+            check(com.lymeowz.item.stats.CombatMath.criticalChance(true, weaponStats.getCriticalChance(), 0, 0) == 100,
+                    "live lore critical chance reaches the damage formula");
+            check(Math.abs(com.lymeowz.item.stats.CombatMath.criticalDamageMultiplier(true, weaponStats.getCriticalDamage(), 0, 0) - 1.5) < 0.000001,
+                    "live lore critical damage reaches the damage formula");
+            check(com.lymeowz.item.stats.CombatMath.outgoingBonus(false, weaponStats.getPvPDamage(), weaponStats.getPvEDamage()) == 20,
+                    "live PvE damage branch");
+            check(com.lymeowz.item.stats.CombatMath.incomingDefenseBonus(false, armorStats.getPvPDefense(), armorStats.getPvEDefense()) == 20,
+                    "live PvE defense branch");
+            getLogger().info("PASS: real equipped Stats lore for damage, defense, penetration, crit, AoE, PvP/PvE, accuracy, block and dodge");
+            // Cross-plugin Lib Stats API with the real LyMeowzLib classloader.
+            // Unknown contributors must use neutral values, not throw NPE.
+            final var apiStats = com.lymeowz.lib.core.builder.stats.StatsEntityMemory
+                    .getInstance().getStatsEntity(a, true);
+            final var addType = com.lymeowz.lib.core.builder.stats.StatsType.BASE_ADDITIONAL_DAMAGE;
+            final var multiplyType = com.lymeowz.lib.core.builder.stats.StatsType.FINAL_MULTIPLIER;
+            check(apiStats.getTotalValueByPlugin(addType, "unregistered-plugin") == 0.0,
+                    "Lib Stats missing additive plugin uses zero");
+            apiStats.setValue(addType, myitems, "weapon", 4.5);
+            check(Math.abs(apiStats.getTotalValue(addType) - 4.5) < 0.000001,
+                    "Lib Stats adds plugin contributions");
+            check(apiStats.getTotalValueByPlugin(addType, "unregistered-plugin") == 0.0,
+                    "Lib Stats missing additive plugin after registration");
+            apiStats.setValue(multiplyType, myitems, "modifier", 1.5);
+            check(Math.abs(apiStats.getTotalValue(multiplyType) - 1.5) < 0.000001,
+                    "Lib Stats multiplies plugin contributions");
+            check(apiStats.getTotalValueByPlugin(multiplyType, "unregistered-plugin") == 1.0,
+                    "Lib Stats missing multiplier plugin uses identity");
+            check(apiStats.unregister(), "Lib Stats entity fixture unregisters");
+            getLogger().info("PASS: live LyMeowzLib Stats API neutral plugin lookup and accumulation");
+            // Restore the simple fixture before combat ability checks:
+            // 100% critical chance + high PvE/AoE stats can kill the disposable
+            // victim before the next Venom_Blast damage event fires.
+            final ItemStack simpleWeapon = new ItemStack(Material.IRON_SWORD);
+            EquipmentUtil.addLore(simpleWeapon, stats.getTextLoreStats(LoreStatsEnum.DAMAGE, 5));
+            a.getEquipment().setItemInMainHand(simpleWeapon);
+            final ItemStack simpleArmor = new ItemStack(Material.IRON_CHESTPLATE);
+            EquipmentUtil.addLore(simpleArmor, stats.getTextLoreStats(LoreStatsEnum.DEFENSE, 2));
+            b.getEquipment().setChestplate(simpleArmor);
             final double before = b.getHealth();
             b.damage(2, a);
             final double after = b.getHealth();
@@ -1855,6 +1998,7 @@ public final class Paper26LiveProbe extends JavaPlugin {
             verifyPowerCooldownIsolation();
             verifyPassivePeriodFallback();
             verifyNearbyCombatTargets();
+            verifyMovingVenomBlast();
             verifyRealMobStatsCombat();
         } catch (Throwable error) {
             getLogger().severe("FAIL: live NBT/ability compatibility test: " + error);
