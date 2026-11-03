@@ -853,6 +853,19 @@ public final class Paper26LiveProbe extends JavaPlugin {
                             && decoded.getGrade() == 1
                             && Math.abs(decoded.getChance() - 65.0) < 0.001,
                     name + " can decode its own lore without losing grade/chance");
+            // A generated String is not an equipped item. Paper 26.3 may
+            // normalize away the invisible legacy marker codes on ItemMeta.
+            // All 25 skills must survive both item lore and byte serialization.
+            final ItemStack encodedWeapon = new ItemStack(Material.IRON_SWORD);
+            EquipmentUtil.addLore(encodedWeapon, lore);
+            final ItemStack persistedWeapon =
+                    ItemStack.deserializeBytes(encodedWeapon.serializeAsBytes());
+            final var weaponSkills = abilityManager.getListAbilityItemWeapon(persistedWeapon);
+            check(weaponSkills.size() == 1
+                            && weaponSkills.get(0).getAbility().equalsIgnoreCase(id)
+                            && weaponSkills.get(0).getGrade() == 1
+                            && Math.abs(weaponSkills.get(0).getChance() - 65.0) < 0.001,
+                    name + " must roundtrip via real Paper ItemMeta and serialized weapon");
         }
         final org.bukkit.configuration.file.YamlConfiguration sample =
                 org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(
@@ -1240,7 +1253,14 @@ public final class Paper26LiveProbe extends JavaPlugin {
                             && parsedVenom.get(0).getGrade() == 10
                             && parsedVenom.get(0).getChance() == 100.0,
                     "Venom_Blast 100% item lore must decode and preserve grade");
-            a.getEquipment().setItemInMainHand(venomSword);
+            final ItemStack persistedVenom =
+                    ItemStack.deserializeBytes(venomSword.serializeAsBytes());
+            final var persistedSkills = weaponSkills.getListAbilityItemWeapon(persistedVenom);
+            check(persistedSkills.size() == 1
+                            && persistedSkills.get(0).getGrade() == 10
+                            && persistedSkills.get(0).getChance() == 100.0,
+                    "Venom_Blast 100% survives real Paper serialized ItemStack");
+            a.getEquipment().setItemInMainHand(persistedVenom);
             final var rolledSkills = weaponSkills.getMapAbilityWeapon(a, true);
             check(rolledSkills.containsKey(venomBlast) && rolledSkills.get(venomBlast) == 10,
                     "Venom_Blast 100% must survive equipped-weapon chance roll");
