@@ -1479,6 +1479,26 @@ public final class Paper26LiveProbe extends JavaPlugin {
             check(com.lymeowz.item.stats.CombatMath.incomingDefenseBonus(false, armorStats.getPvPDefense(), armorStats.getPvEDefense()) == 20,
                     "live PvE defense branch");
             getLogger().info("PASS: real equipped Stats lore for damage, defense, penetration, crit, AoE, PvP/PvE, accuracy, block and dodge");
+            // Cross-plugin Lib Stats API with the real LyMeowzLib classloader.
+            // Unknown contributors must use neutral values, not throw NPE.
+            final var apiStats = com.lymeowz.lib.core.builder.stats.StatsEntityMemory
+                    .getInstance().getStatsEntity(a, true);
+            final var addType = com.lymeowz.lib.core.builder.stats.StatsType.BASE_ADDITIONAL_DAMAGE;
+            final var multiplyType = com.lymeowz.lib.core.builder.stats.StatsType.FINAL_MULTIPLIER;
+            check(apiStats.getTotalValueByPlugin(addType, "unregistered-plugin") == 0.0,
+                    "Lib Stats missing additive plugin uses zero");
+            apiStats.setValue(addType, myitems, "weapon", 4.5);
+            check(Math.abs(apiStats.getTotalValue(addType) - 4.5) < 0.000001,
+                    "Lib Stats adds plugin contributions");
+            check(apiStats.getTotalValueByPlugin(addType, "unregistered-plugin") == 0.0,
+                    "Lib Stats missing additive plugin after registration");
+            apiStats.setValue(multiplyType, myitems, "modifier", 1.5);
+            check(Math.abs(apiStats.getTotalValue(multiplyType) - 1.5) < 0.000001,
+                    "Lib Stats multiplies plugin contributions");
+            check(apiStats.getTotalValueByPlugin(multiplyType, "unregistered-plugin") == 1.0,
+                    "Lib Stats missing multiplier plugin uses identity");
+            check(apiStats.unregister(), "Lib Stats entity fixture unregisters");
+            getLogger().info("PASS: live LyMeowzLib Stats API neutral plugin lookup and accumulation");
             final double before = b.getHealth();
             b.damage(2, a);
             final double after = b.getHealth();
