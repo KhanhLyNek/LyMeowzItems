@@ -34,7 +34,7 @@ jobs:
       - name: Checkout AgarthaLib
         uses: actions/checkout@v4
         with:
-          repository: KhanhLyNek/AgarthaLib
+          repository: KhanhLyNek/LyMeowzLib
           ref: master
           path: agarthalib
       - name: Verify MyItems HEX color input and old name/lore command routes
