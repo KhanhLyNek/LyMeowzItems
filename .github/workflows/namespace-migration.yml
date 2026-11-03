@@ -1,13 +1,10 @@
 name: One-time full Java namespace migration — LyMeowzItem
+# Historical one-time namespace migration is complete. Never rewrite
+# master automatically on an unrelated push or during PR merges.
 on:
-  push:
-    branches: [master]
-    paths:
-      - ci/migrate_all_java_packages.py
-      - .github/workflows/namespace-migration.yml
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 concurrency:
   group: one-time-item-namespace-migration
   cancel-in-progress: false
@@ -53,11 +50,15 @@ jobs:
         run: |
           python3 .github/scripts/check_legacy_logic.py
           python3 .github/scripts/check_paper26_jar_contents.py
-      - name: Commit verified package migration to master
+      - name: Report candidate migration diff for manual review
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git diff --cached --quiet && exit 0
-          git commit -m "refactor(item): move every Java package into com.lymeowz.item"
-          git push origin HEAD:master
+          git status --short
+          git diff --stat
+          git diff --binary > namespace-migration-review.patch
+      - name: Upload migration diff without pushing master
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: namespace-migration-review
+          path: namespace-migration-review.patch
+          if-no-files-found: warn

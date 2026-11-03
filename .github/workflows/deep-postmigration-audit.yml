@@ -5,6 +5,11 @@ on:
     paths:
       - ci/deep_postmigration_audit.py
       - .github/workflows/deep-postmigration-audit.yml
+  pull_request:
+    paths:
+      - ci/deep_postmigration_audit.py
+      - .github/workflows/deep-postmigration-audit.yml
+      - .github/workflows/namespace-migration.yml
   workflow_dispatch:
 permissions:
   contents: read
