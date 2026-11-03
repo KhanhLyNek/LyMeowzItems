@@ -173,7 +173,7 @@ def run_server(folder):
         raise AssertionError("Real Paper mob-target ability casts failed")
     for label in (
             "PASS: Venom_Blast 10 at 100% equipped weapon -> real hit -> Wither",
-            "PASS: skill-generated damage cannot proc another 100% weapon ability",
+            "PASS: secondary weapon procs attenuate 80% per generation and stop at chain cap",
             "PASS: cancelled instant damage clears metadata for next valid hit",
             "PASS: invalid passive effect scheduler periods fall back to 100 ticks",
             "PASS: command/shoot/special cooldown category isolation",

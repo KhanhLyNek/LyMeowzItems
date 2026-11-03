@@ -37,4 +37,14 @@ for name in ("Freeze", "Roots", "Curse"):
     assert "if (victims instanceof Player playerVictims)" in body, name
     assert "messageAttacker.sendMessage((CommandSender)attacker" not in body, name
     assert "messageVictims.sendMessage((CommandSender)victims" not in body, name
-print("PASS: 25 skill classes, Venom Spread duration and 3 safe mob cast chat paths")
+# Verify that secondary ability procs are scaled centrally and capped
+# without altering the 25 protected, original skill implementations.
+listener = (root / "src/com/lymeowz/item/listener/main/ListenerEntityDamageByEntity.java").read_text("utf-8")
+chain = (root / "src/com/lymeowz/item/ability/SkillProcChain.java").read_text("utf-8")
+assert "MAX_CHAIN_DEPTH = 4" in chain, "Missing bounded secondary skill-proc depth"
+assert "0.2, 0.04, 0.008, 0.0016" in chain, "Missing 80% per generation chance falloff"
+assert "SkillProcChain.depthForHit(attacker, isSkillDamage || isAreaDamage)" in listener
+assert "abilityWeaponManager.getMapAbilityWeapon(attacker, true, skillChainDepth)" in listener
+assert "SkillProcChain.castAtDepth(attacker, skillChainDepth" in listener
+assert "SkillProcChain.roll(" in manager, "Secondary lore skill chance is not attenuated"
+print("PASS: 25 skill classes, Venom Spread, mob casts and bounded secondary weapon proc wiring")

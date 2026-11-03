@@ -1404,21 +1404,55 @@ public final class Paper26LiveProbe extends JavaPlugin {
                     "Venom_Blast equipped real Paper hit must apply Wither to zombies");
             getLogger().info("PASS: Venom_Blast 10 at 100% equipped weapon -> real hit -> Wither");
 
-            // Damage originating from a skill must never re-trigger the same
-            // 100% weapon skill. Give the metadata a generous expiration so
-            // this assertion is independent of CI scheduling latency.
+            // Secondary damage should roll again with 80% less chance at
+            // EACH generation, not be categorically suppressed. These
+            // deterministic boundary rolls avoid flaky random CI assertions.
+            check(com.lymeowz.item.ability.SkillProcChain.adjustedChance(30, 0) == 30.0
+                            && Math.abs(com.lymeowz.item.ability.SkillProcChain.adjustedChance(30, 1) - 6.0) < 0.000001
+                            && Math.abs(com.lymeowz.item.ability.SkillProcChain.adjustedChance(30, 2) - 1.2) < 0.000001
+                            && Math.abs(com.lymeowz.item.ability.SkillProcChain.adjustedChance(45, 1) - 9.0) < 0.000001,
+                    "secondary skill chance must fall by 80% per generation");
+            check(com.lymeowz.item.ability.SkillProcChain.roll(45, 1, 0.089)
+                            && !com.lymeowz.item.ability.SkillProcChain.roll(45, 1, 0.09)
+                            && !com.lymeowz.item.ability.SkillProcChain.roll(100, 5, 0.0),
+                    "secondary proc boundary and hard chain cap");
+            check(com.lymeowz.item.ability.SkillProcChain.depthForHit(null, false) == 0
+                            && com.lymeowz.item.ability.SkillProcChain.depthForHit(null, true) == 1,
+                    "normal and untracked secondary hits start at levels zero and one");
+            com.lymeowz.item.ability.SkillProcChain.castAtDepth(null, 1, () ->
+                    check(com.lymeowz.item.ability.SkillProcChain.depthForHit(null, true) == 2,
+                            "nested synchronous skills advance exactly one generation"));
+            check(com.lymeowz.item.ability.SkillProcChain.depthForHit(null, true) == 1,
+                    "nested cast context is always restored");
+            // A delayed Bukkit task runs without the original ThreadLocal.
+            // Its attacker marker must still preserve the last generation.
+            com.lymeowz.item.ability.SkillProcChain.castAtDepth(a, 0, () -> { });
+            check(com.lymeowz.item.ability.SkillProcChain.depthForHit(a, true) == 1,
+                    "delayed damage resumes at the first secondary generation");
+            com.lymeowz.item.ability.SkillProcChain.castAtDepth(a, 2, () -> { });
+            check(com.lymeowz.item.ability.SkillProcChain.depthForHit(a, true) == 3,
+                    "delayed task metadata advances with its latest generation");
+            com.lymeowz.item.ability.SkillProcChain.castAtDepth(a, 0, () -> { });
+            check(com.lymeowz.item.ability.SkillProcChain.depthForHit(a, true) == 3,
+                    "later original casts do not reset earlier pending chain attenuation");
+            // With a 100% original lore ability, the fifth secondary
+            // generation must still be blocked on a real Paper damage event.
             b.setNoDamageTicks(0);
             b.removePotionEffect(org.bukkit.potion.PotionEffectType.WITHER);
-            com.lymeowz.lib.utility.MetadataUtil.setCooldown(
-                    b, "Skill_Damage", 5_000L);
-            try {
-                b.damage(2.0, a);
-                check(!b.hasPotionEffect(org.bukkit.potion.PotionEffectType.WITHER),
-                        "secondary skill damage must not proc Venom_Blast again");
-            } finally {
-                com.lymeowz.lib.utility.CombatUtil.removeMetadataSkillDamage(b);
-            }
-            getLogger().info("PASS: skill-generated damage cannot proc another 100% weapon ability");
+            com.lymeowz.item.ability.SkillProcChain.castAtDepth(a, 4, () -> {
+                com.lymeowz.lib.utility.MetadataUtil.setCooldown(
+                        b, "Skill_Damage", 5_000L);
+                try {
+                    b.damage(2.0, a);
+                    check(!b.hasPotionEffect(org.bukkit.potion.PotionEffectType.WITHER),
+                            "fifth-generation secondary skill must not proc");
+                } finally {
+                    com.lymeowz.lib.utility.CombatUtil.removeMetadataSkillDamage(b);
+                }
+            });
+            check(weaponSkills.getMapAbilityWeapon(a, true, 5).isEmpty(),
+                    "weapon lore ability rolls are empty above the chain cap");
+            getLogger().info("PASS: secondary weapon procs attenuate 80% per generation and stop at chain cap");
 
             // Simulate a protection plugin cancelling the attack at HIGH,
             // before MyItems' HIGHEST damage listener. No damage, skill,
