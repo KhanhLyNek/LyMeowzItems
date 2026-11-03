@@ -1267,9 +1267,15 @@ public final class Paper26LiveProbe extends JavaPlugin {
         // Spawn and inspect on subsequent ticks to model actual live combat,
         // rather than misclassifying Paper startup timing as a range bug.
         Bukkit.getScheduler().runTaskLater(this, () -> {
-            // Hostile mobs can be despawned by the CI world's Peaceful
-            // difficulty before the next tick. Cows persist across ticks,
-            // so this tests range lookup rather than peaceful despawning.
+            // Keep both entity chunks loaded across ticks. In a headless
+            // CI world without players, spawn-adjacent chunks may unload and
+            // invalidate even passive cows before the combat query runs.
+            final org.bukkit.Chunk nearChunk = world.getChunkAt(origin);
+            final org.bukkit.Chunk farChunk = world.getChunkAt(origin.clone().add(8, 0, 0));
+            final boolean nearTicket = nearChunk.addPluginChunkTicket(this);
+            final boolean farTicket = farChunk.addPluginChunkTicket(this);
+            // Hostile mobs can despawn in Peaceful; passive cows isolate
+            // the range query from the difficulty rules.
             final org.bukkit.entity.Cow near =
                     world.spawn(origin, org.bukkit.entity.Cow.class);
             final org.bukkit.entity.Cow far =
@@ -1278,6 +1284,8 @@ public final class Paper26LiveProbe extends JavaPlugin {
             far.setAI(false);
             Bukkit.getScheduler().runTaskLater(this, () -> {
                 try {
+                    check(near.isValid() && far.isValid(),
+                            "combat fixture cows must remain valid in ticketed chunks");
                     final var candidates = com.lymeowz.lib.utility.CombatUtil.getNearbyUnits(origin, 3.0);
                     if (!candidates.contains(near) || candidates.contains(far)) {
                         getLogger().warning("Combat target probe: nearValid=" + near.isValid()
@@ -1304,6 +1312,8 @@ public final class Paper26LiveProbe extends JavaPlugin {
                 } finally {
                     if (near.isValid()) near.remove();
                     if (far.isValid()) far.remove();
+                    if (nearTicket) nearChunk.removePluginChunkTicket(this);
+                    if (farTicket) farChunk.removePluginChunkTicket(this);
                 }
             }, 2L);
         }, 2L);

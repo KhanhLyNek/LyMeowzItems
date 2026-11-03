@@ -24,7 +24,7 @@ jobs:
       - name: Checkout migrated LyMeowzLib
         uses: actions/checkout@v4
         with:
-          repository: KhanhLyNek/AgarthaLib
+          repository: KhanhLyNek/LyMeowzLib
           ref: master
           path: agarthalib
       - name: Check library has been fully migrated first
