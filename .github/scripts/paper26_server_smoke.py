@@ -175,7 +175,9 @@ def run_server(folder):
             "PASS: Venom_Blast 10 at 100% equipped weapon -> real hit -> Wither",
             "PASS: skill-generated damage cannot proc another 100% weapon ability",
             "PASS: cancelled instant damage clears metadata for next valid hit",
-            "PASS: invalid passive effect scheduler periods fall back to 100 ticks"):
+            "PASS: invalid passive effect scheduler periods fall back to 100 ticks",
+            "PASS: command/shoot/special cooldown category isolation",
+            "PASS: bounded combat target search preserves spherical and infinite reach"):
         if label not in all_logs:
             raise AssertionError(f"Missing live postmigration combat/scheduler regression: {label}")
     if "PASS: EssentialsX 2.22 IWarps contract on real Paper plugin classloaders" not in all_logs:
