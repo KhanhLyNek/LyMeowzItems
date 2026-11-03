@@ -1210,6 +1210,55 @@ public final class Paper26LiveProbe extends JavaPlugin {
         getLogger().info("PASS: Paper Stats item lore NBT and PvP/PvE branch contracts");
     }
 
+    /** Command/shoot/special cooldowns must be independent. */
+    private void verifyPowerCooldownIsolation() {
+        final com.lymeowz.item.api.builder.player.PlayerPowerCooldown timers =
+                new com.lymeowz.item.api.builder.player.PlayerPowerCooldown();
+        final com.lymeowz.lib.core.enums.branch.ProjectileEnum projectile =
+                com.lymeowz.lib.core.enums.branch.ProjectileEnum.ARROW;
+        final com.lymeowz.item.api.builder.power.PowerSpecialEnum special =
+                com.lymeowz.item.api.builder.power.PowerSpecialEnum.BLINK;
+        final com.lymeowz.item.api.builder.power.PowerEnum commandType =
+                com.lymeowz.item.api.builder.power.PowerEnum.COMMAND;
+        final com.lymeowz.item.api.builder.power.PowerEnum shootType =
+                com.lymeowz.item.api.builder.power.PowerEnum.SHOOT;
+        final com.lymeowz.item.api.builder.power.PowerEnum specialType =
+                com.lymeowz.item.api.builder.power.PowerEnum.SPECIAL;
+        timers.setPowerCommandCooldown("test-command", 120_000L);
+        timers.setPowerShootCooldown(projectile, 120_000L);
+        timers.setPowerSpecialCooldown(special, 120_000L);
+        check(timers.isPowerCommandCooldown("test-command")
+                        && timers.isPowerShootCooldown(projectile)
+                        && timers.isPowerSpecialCooldown(special),
+                "three power cooldown categories are initialized");
+        timers.clearPowerCooldown(commandType);
+        check(!timers.isPowerCommandCooldown("test-command")
+                        && timers.isPowerShootCooldown(projectile)
+                        && timers.isPowerSpecialCooldown(special),
+                "clearing command does not silently bypass shoot and special cooldown");
+        timers.setPowerCommandCooldown("test-command", 120_000L);
+        timers.clearPowerCooldown(shootType);
+        check(timers.isPowerCommandCooldown("test-command")
+                        && !timers.isPowerShootCooldown(projectile)
+                        && timers.isPowerSpecialCooldown(special),
+                "clearing shoot preserves command and special cooldown");
+        timers.setPowerShootCooldown(projectile, 120_000L);
+        timers.clearPowerCooldown(specialType);
+        check(timers.isPowerCommandCooldown("test-command")
+                        && timers.isPowerShootCooldown(projectile)
+                        && !timers.isPowerSpecialCooldown(special),
+                "clearing special preserves command and shoot cooldown");
+        timers.clearPowerCooldown(null);
+        check(timers.isPowerCommandCooldown("test-command")
+                        && timers.isPowerShootCooldown(projectile),
+                "null category does not delete power cooldowns");
+        timers.clearAllCooldown();
+        check(!timers.isPowerCommandCooldown("test-command")
+                        && !timers.isPowerShootCooldown(projectile),
+                "explicit clearAll still resets every category");
+        getLogger().info("PASS: command/shoot/special cooldown category isolation");
+    }
+
     /** A malformed config must never abort scheduler creation during reload. */
     private void verifyPassivePeriodFallback() throws Exception {
         final com.lymeowz.item.config.plugin.MainConfig main =
@@ -1709,6 +1758,7 @@ public final class Paper26LiveProbe extends JavaPlugin {
             verifyItemModels();
             verifyHexItemColors();
             verifyRealStatsLore();
+            verifyPowerCooldownIsolation();
             verifyPassivePeriodFallback();
             verifyRealMobStatsCombat();
         } catch (Throwable error) {
