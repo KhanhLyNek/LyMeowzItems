@@ -37,6 +37,18 @@ for name in ("Freeze", "Roots", "Curse"):
     assert "if (victims instanceof Player playerVictims)" in body, name
     assert "messageAttacker.sendMessage((CommandSender)attacker" not in body, name
     assert "messageVictims.sendMessage((CommandSender)victims" not in body, name
+# Venom Blast tracks the SAME living target, but samples its current
+# position separately at every 5-tick ring and the final explosion.
+blast = (skills / "AbilityWeaponVenomBlast.java").read_text("utf-8")
+tick_section = blast.split("public void run() {", 1)[1]
+assert "victims.getLocation().add(0.0, 0.5, 0.0)" in tick_section
+assert "victims.isDead()" in tick_section and "!victims.isValid()" in tick_section
+assert "victims.getWorld() != castWorld" in tick_section
+assert "CombatUtil.getNearbyUnits(location, 3.0)" in tick_section, "Explosion target range not dynamic"
+assert "CombatUtil.getNearbyUnits(location, this.radius + 1.0)" in tick_section
+assert "final Location flowerPosition = location.clone().add(this.x, 0.0, this.z);" in tick_section
+assert "final Location locationFlower = flowerPosition.clone();" in tick_section
+assert "final Location location = victims.getLocation()" not in blast.split("public void cast(", 1)[1].split("public void run() {", 1)[0], "Location must not be fixed at cast"
 # Verify that secondary ability procs are scaled centrally and capped
 # without altering the 25 protected, original skill implementations.
 listener = (root / "src/com/lymeowz/item/listener/main/ListenerEntityDamageByEntity.java").read_text("utf-8")
