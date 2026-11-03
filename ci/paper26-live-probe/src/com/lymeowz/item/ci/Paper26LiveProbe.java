@@ -1319,6 +1319,83 @@ public final class Paper26LiveProbe extends JavaPlugin {
         }, 2L);
     }
 
+    /**
+     * On real Paper, move the target between venom ring ticks and prove the
+     * final explosion damages mobs at its NEW position, not the old point.
+     * Sentinels spawn after all intermediate ring damage has finished.
+     */
+    private void verifyMovingVenomBlast() {
+        final World world = Bukkit.getWorlds().get(0);
+        final Location start = world.getSpawnLocation().clone().add(47.5, 18.0, 47.5);
+        final Location destination = start.clone().add(12.0, 0.0, 0.0);
+        Bukkit.getScheduler().runTaskLater(this, () -> {
+            final org.bukkit.Chunk startChunk = world.getChunkAt(start);
+            final org.bukkit.Chunk endChunk = world.getChunkAt(destination);
+            final boolean firstTicket = startChunk.addPluginChunkTicket(this);
+            final boolean secondTicket = endChunk.addPluginChunkTicket(this);
+            final org.bukkit.entity.Cow attacker = world.spawn(start.clone().add(-2.0, 0.0, 0.0),
+                    org.bukkit.entity.Cow.class);
+            final org.bukkit.entity.Cow target = world.spawn(start, org.bukkit.entity.Cow.class);
+            for (final org.bukkit.entity.Cow cow : List.of(attacker, target)) {
+                cow.setAI(false);
+                cow.setGravity(false);
+            }
+
+            final org.bukkit.entity.Cow[] oldNew = new org.bukkit.entity.Cow[2];
+            final boolean[] hit = new boolean[2];
+            final org.bukkit.event.Listener damageProbe = new org.bukkit.event.Listener() {
+                @org.bukkit.event.EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
+                public void onDamage(org.bukkit.event.entity.EntityDamageByEntityEvent event) {
+                    if (!event.getDamager().equals(attacker)) return;
+                    if (oldNew[0] != null && event.getEntity().equals(oldNew[0])) hit[0] = true;
+                    if (oldNew[1] != null && event.getEntity().equals(oldNew[1])) hit[1] = true;
+                }
+            };
+            Bukkit.getPluginManager().registerEvents(damageProbe, this);
+
+            final AbilityWeapon venom = ((MyItems) Bukkit.getPluginManager()
+                    .getPlugin("LyMeowzItem")).getRegisterManager()
+                    .getRegisterAbilityWeaponManager().getAbilityWeapon("Venom_Blast");
+            check(venom != null, "Venom Blast registered for moving-target probe");
+            venom.cast(attacker, target, 10, 50.0);
+            Bukkit.getScheduler().runTaskLater(this, () -> {
+                check(target.isValid() && target.teleport(destination),
+                        "Venom Blast test target must move to destination");
+            }, 7L);
+            Bukkit.getScheduler().runTaskLater(this, () -> {
+                oldNew[0] = world.spawn(start.clone().add(2.0, 0.0, 0.0),
+                        org.bukkit.entity.Cow.class);
+                oldNew[1] = world.spawn(destination.clone().add(2.0, 0.0, 0.0),
+                        org.bukkit.entity.Cow.class);
+                for (final org.bukkit.entity.Cow cow : oldNew) {
+                    cow.setAI(false);
+                    cow.setGravity(false);
+                }
+            }, 18L);
+            Bukkit.getScheduler().runTaskLater(this, () -> {
+                try {
+                    check(oldNew[0] != null && oldNew[1] != null,
+                            "Venom Blast sentinels created before final explosion");
+                    check(hit[1] && !hit[0],
+                            "Venom Blast explosion must hit new target location, not initial location");
+                    getLogger().info("PASS: Venom_Blast flowers and final explosion follow moving target");
+                } catch (AssertionError error) {
+                    getLogger().severe("FAIL: moving Venom Blast target probe: " + error.getMessage());
+                    throw error;
+                } finally {
+                    org.bukkit.event.HandlerList.unregisterAll(damageProbe);
+                    if (attacker.isValid()) attacker.remove();
+                    if (target.isValid()) target.remove();
+                    for (final org.bukkit.entity.Cow cow : oldNew) {
+                        if (cow != null && cow.isValid()) cow.remove();
+                    }
+                    if (firstTicket) startChunk.removePluginChunkTicket(this);
+                    if (secondTicket) endChunk.removePluginChunkTicket(this);
+                }
+            }, 26L);
+        }, 2L);
+    }
+
     /** A malformed config must never abort scheduler creation during reload. */
     private void verifyPassivePeriodFallback() throws Exception {
         final com.lymeowz.item.config.plugin.MainConfig main =
@@ -1855,6 +1932,7 @@ public final class Paper26LiveProbe extends JavaPlugin {
             verifyPowerCooldownIsolation();
             verifyPassivePeriodFallback();
             verifyNearbyCombatTargets();
+            verifyMovingVenomBlast();
             verifyRealMobStatsCombat();
         } catch (Throwable error) {
             getLogger().severe("FAIL: live NBT/ability compatibility test: " + error);
