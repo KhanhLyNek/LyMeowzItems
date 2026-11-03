@@ -1259,6 +1259,33 @@ public final class Paper26LiveProbe extends JavaPlugin {
         getLogger().info("PASS: command/shoot/special cooldown category isolation");
     }
 
+    /** Bounded world queries must retain original spherical combat reach. */
+    private void verifyNearbyCombatTargets() {
+        final World world = Bukkit.getWorlds().get(0);
+        final Location origin = world.getSpawnLocation().clone().add(21.5, 4, 21.5);
+        final Zombie near = world.spawn(origin, Zombie.class);
+        final Zombie far = world.spawn(origin.clone().add(8, 0, 0), Zombie.class);
+        try {
+            near.setAI(false);
+            far.setAI(false);
+            final var candidates = com.lymeowz.lib.utility.CombatUtil.getNearbyUnits(origin, 3.0);
+            check(candidates.contains(near) && !candidates.contains(far),
+                    "nearby combat lookup must include local mob and exclude distant mob");
+            check(com.lymeowz.lib.utility.CombatUtil.getNearbyUnits(origin, -2.0).isEmpty(),
+                    "negative combat radius must select nothing");
+            check(com.lymeowz.lib.utility.CombatUtil.getNearbyUnits(origin, Double.NaN).isEmpty(),
+                    "NaN combat radius must select nothing");
+            final var unlimited = com.lymeowz.lib.utility.CombatUtil.getNearbyUnits(
+                    origin, Double.POSITIVE_INFINITY);
+            check(unlimited.contains(near) && unlimited.contains(far),
+                    "unbounded combat radius preserves original all-world behavior");
+            getLogger().info("PASS: bounded combat target search preserves spherical and infinite reach");
+        } finally {
+            if (near.isValid()) near.remove();
+            if (far.isValid()) far.remove();
+        }
+    }
+
     /** A malformed config must never abort scheduler creation during reload. */
     private void verifyPassivePeriodFallback() throws Exception {
         final com.lymeowz.item.config.plugin.MainConfig main =
@@ -1760,6 +1787,7 @@ public final class Paper26LiveProbe extends JavaPlugin {
             verifyRealStatsLore();
             verifyPowerCooldownIsolation();
             verifyPassivePeriodFallback();
+            verifyNearbyCombatTargets();
             verifyRealMobStatsCombat();
         } catch (Throwable error) {
             getLogger().severe("FAIL: live NBT/ability compatibility test: " + error);
